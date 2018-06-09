@@ -99,13 +99,14 @@ controller.hears('help', 'direct_message,mention,direct_mention', function (bot,
 GITHUB:
 - *members* : List members of ${process.env.GIT_ORG}
 - *pull requests* : List open pull requests of ${process.env.GIT_ORG}/${process.env.GIT_MAIN_REPO}
-- *search code* _CODE_ : Search in ${process.env.GIT_MAIN_REPO} code (ex: search code Membership_m )
+- *search code* _CODE_ : Search in ${process.env.GIT_MAIN_REPO} code (ex: _search code Membership_m_ )
+- *search doc* _KEYWORDS_ : Search in ${process.env.GIT_ORG} doc (ex: _search doc Installation pre-requisites_ )
 - *repos* : List repos of ${process.env.GIT_ORG}
 - *teams* : List teams of ${process.env.GIT_ORG}
 
 JENKINS
 - *jobs* : List all jenkins jobs of ${process.env.JENKINS_MAIN_VIEW}
-- *build* _JOB_NAME_ : Launch a build for the job name specified ( ex: build DXCO4SF-1150-TST-DevRootOrg)
+- *build* _JOB_NAME_ : Launch a build for the job name specified ( ex: _build DXCO4SF-1150-TST-DevRootOrg_ )
 
 JIRA
 - *current sprint* : List open issues of the current sprint
@@ -140,7 +141,7 @@ function getGithubClient() {
     return client;
 }
 
-// Search in github ( not working yet )
+// Search in github code 
 controller.hears('search code', 'direct_message,mention,direct_mention', function (bot, message) {
     var key = 'search code'
     var client = getGithubClient();
@@ -168,7 +169,14 @@ controller.hears('search code', 'direct_message,mention,direct_mention', functio
         bot.reply(message, { text: text, attachments: attachments });
 
     });
+});
 
+// Search in github wikis (just provide link, search in wikis is not provided yet by github api)
+controller.hears('search doc', 'direct_message,mention,direct_mention', function (bot, message) {
+    var key = 'search doc'
+    var queryToken = encodeURIComponent(message.text.substring(message.text.indexOf(key) + (key.length + 1)).trim());
+    var searchWikiUrl = 'https://'+process.env.GIT_HOSTNAME.replace('/api/v3','')+'/search?q=org%3A'+process.env.GIT_ORG+'+'+queryToken+'&type=Wikis'
+    bot.reply(message, { attachments: [{ text: searchWikiUrl }] });
 });
 
 // List members of default github org
