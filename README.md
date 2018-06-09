@@ -32,19 +32,19 @@
 ## Commands
 
 - GENERAL
-  - *help* : Provide help for lamanul bot
+  - **help** : Provide help for lamanul bot
 
 - GITHUB:
-  - *members* : List members of ${process.env.GIT_ORG}
-  - *pull requests* : List open pull requests of ${process.env.GIT_ORG}/${process.env.GIT_MAIN_REPO}
-  - *search code* _CODE_ : Search in ${process.env.GIT_MAIN_REPO} code (ex: _search code Membership_m_ )
-  - *search doc* _KEYWORDS_ : Search in ${process.env.GIT_ORG} doc (ex: _search doc Installation pre-requisites_ )
-  - *repos* : List repos of ${process.env.GIT_ORG}
-  - *teams* : List teams of ${process.env.GIT_ORG}
+  - **members** : List members of GIT_ORG
+  - **pull requests** : List open pull requests of GIT_ORG/GIT_MAIN_REPO
+  - **search code** _CODE_ : Search in GIT_MAIN_REPO code (ex: _search code Membership_m_ )
+  - **search doc** _KEYWORDS_ : Search in GIT_ORG doc (ex: _search doc Installation pre-requisites_ )
+  - **repos** : List repos of GIT_ORG
+  - **teams** : List teams of GIT_ORG
 
 - JENKINS
-  - *jobs* : List all jenkins jobs of ${process.env.JENKINS_MAIN_VIEW}
-  - *build* _JOB_NAME_ : Launch a build for the job name specified ( ex: _build DXCO4SF-1150-TST-DevRootOrg_ )
+  - **jobs** : List all jenkins jobs of ${process.env.JENKINS_MAIN_VIEW}
+  - **build** _JOB_NAME_ : Launch a build for the job name specified ( ex: _build DXCO4SF-1150-TST-DevRootOrg_ )
 
 - JIRA
-  - *current sprint* : List open issues of the current sprint
+  - **current sprint** : List open issues of the current sprint
