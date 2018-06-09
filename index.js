@@ -174,10 +174,9 @@ controller.hears('search code', 'direct_message,mention,direct_mention', functio
 // List members of default github org
 controller.hears('pull requests', 'direct_message,mention,direct_mention', function (bot, message) {
     var client = getGithubClient();
-    client.get('/repos/' + process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO + '/pulls?per_page=50', {}, function (err, status, pullRequests, headers) {
+    client.get('/repos/' + process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO + '/pulls', {per_page:100}, function (err, status, pullRequests, headers) {
         console.log(headers);
         console.log(pullRequests); //json object
-
         var text = 'Repo *' + process.env.GIT_MAIN_REPO + '* contains *' + pullRequests.length + '* pull requests\n';
         var attachments = [];
         pullRequests.forEach(pullRequest => {
@@ -207,7 +206,7 @@ controller.hears('pull requests', 'direct_message,mention,direct_mention', funct
 // List teams of default org
 controller.hears('teams', 'direct_message,mention,direct_mention', function (bot, message) {
     var client = getGithubClient();
-    client.get('/orgs/' + process.env.GIT_ORG + '/teams?per_page=50', {}, function (err, status, teams, headers) {
+    client.get('/orgs/' + process.env.GIT_ORG + '/teams', {per_page:100}, function (err, status, teams, headers) {
         console.log(headers);
         console.log(teams); //json object
 
@@ -244,7 +243,7 @@ controller.hears('teams', 'direct_message,mention,direct_mention', function (bot
 // List members of default github org
 controller.hears('members', 'direct_message,mention,direct_mention', function (bot, message) {
     var client = getGithubClient();
-    client.get('/orgs/' + process.env.GIT_ORG + '/members', { per_page: 50 }, function (err, status, members, headers) {
+    client.get('/orgs/' + process.env.GIT_ORG + '/members', { per_page: 100 }, function (err, status, members, headers) {
         console.log(headers);
         console.log(members); //json object
 
@@ -261,7 +260,7 @@ controller.hears('members', 'direct_message,mention,direct_mention', function (b
 // List default org repositories
 controller.hears('repos', 'direct_message,mention,direct_mention', function (bot, message) {
     var client = getGithubClient();
-    client.get('/orgs/' + process.env.GIT_ORG + '/repos?per_page=50', {}, function (err, status, repos, headers) {
+    client.get('/orgs/' + process.env.GIT_ORG + '/repos', {per_page:100}, function (err, status, repos, headers) {
         console.log(headers);
         console.log(repos); //json object
         var text = 'Repo *' + process.env.GIT_ORG + '* contains *' + repos.length + '* repositories \n';
