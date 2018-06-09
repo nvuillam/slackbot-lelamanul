@@ -1,6 +1,6 @@
 {
   "name": "slackbot-lelamanul",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Mouwouuuuuuu",
   "main": "index.js",
   "scripts": {
@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/nvuillam/slackbot-lelamanul.git#readme",
   "engines": {
-    "node": "5.1.1"
+    "node": "8.11.0"
   },
   "dependencies": {
     "botkit": "^0.6.14",
