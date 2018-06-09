@@ -1,0 +1,39 @@
+{
+  "name": "slackbot-lelamanul",
+  "version": "0.0.1",
+  "description": "Mouwouuuuuuu",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvuillam/slackbot-lelamanul.git"
+  },
+  "keywords": [
+    "slack",
+    "bot"
+  ],
+  "author": "Nicolas Vuillamy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nvuillam/slackbot-lelamanul.git/issues"
+  },
+  "homepage": "https://github.com/nvuillam/slackbot-lelamanul.git#readme",
+  "engines": {
+    "node": "5.1.1"
+  },
+  "dependencies": {
+    "botkit": "^0.6.14",
+    "botkit-storage-mongo": "^1.0.2",
+    "github-api": "^3.0.0",
+    "jenkins-api": "^0.3.1",
+    "mongodb": "^1.4.39",
+    "octonode": "^0.9.2"
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "devDependencies": {}
+}
