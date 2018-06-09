@@ -63,34 +63,6 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
     process.exit(1);
 }
 
-function getGithubClient() {
-    var github = require('octonode');
-
-    var scopes = {
-        'scopes': ['user', 'repo', 'gist', 'admin:org'],
-        'note': 'admin script'
-    };
-
-    github.auth.config({
-        username: process.env.GIT_USERNAME,
-        password: process.env.GIT_PASSWORD
-    }).login(scopes, function (err, id, token, headers) {
-        console.log(id, token);
-    });
-
-    var client = github.client({
-        username: process.env.GIT_USERNAME, //'nvuillam',
-        password: process.env.GIT_PASSWORD //'7b35856c1fe3057e7ed65578007a20e9decc2d07'
-        //id: process.env.GIT_CLIENT_ID,
-        //secret: process.env.GIT_CLIENT_SECRET
-    }, {
-            hostname: process.env.GIT_HOSTNAME // 'partner-github.csc.com/api/v3'
-        });
-
-    return client;
-}
-
-
 // Handle events related to the websocket connection to Slack
 controller.on('rtm_open', function (bot) {
     console.log('** The RTM api just connected!');
@@ -123,39 +95,78 @@ controller.hears('youhou', 'direct_message,mention,direct_mention', function (bo
 controller.hears('help', 'direct_message,mention,direct_mention', function (bot, message) {
     bot.reply(message, {
         text: `Commands for lelamanul
+
 GITHUB:
 - *members* : List members of ${process.env.GIT_ORG}
 - *pull requests* : List open pull requests of ${process.env.GIT_ORG}/${process.env.GIT_MAIN_REPO}
+- *search code* _CODE_ : Search in ${process.env.GIT_MAIN_REPO} code (ex: search code Membership_m )
 - *repos* : List repos of ${process.env.GIT_ORG}
 - *teams* : List teams of ${process.env.GIT_ORG}
+
 JENKINS
 - *jobs* : List all jenkins jobs of ${process.env.JENKINS_MAIN_VIEW}
 - *build* _JOB_NAME_ : Launch a build for the job name specified ( ex: build DXCO4SF-1150-TST-DevRootOrg)
+
+JIRA
+- *current sprint* : List open issues of the current sprint
 `});
 });
 
 //////////// GITHUB ////////////
 
+// Login to github
+function getGithubClient() {
+    var github = require('octonode');
+
+    var scopes = {
+        'scopes': ['user', 'repo', 'gist', 'admin:org'],
+        'note': 'admin script'
+    };
+
+    github.auth.config({
+        username: process.env.GIT_USERNAME,
+        password: process.env.GIT_PASSWORD
+    }).login(scopes, function (err, id, token, headers) {
+        console.log(id, token);
+    });
+
+    var client = github.client({
+        username: process.env.GIT_USERNAME,
+        password: process.env.GIT_PASSWORD
+    }, {
+            hostname: process.env.GIT_HOSTNAME
+        });
+
+    return client;
+}
+
 // Search in github ( not working yet )
-controller.hears('git search code', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('search code', 'direct_message,mention,direct_mention', function (bot, message) {
+    var key = 'search code'
     var client = getGithubClient();
-    var queryToken = message.text.substring(message.text.indexOf('git search code') + ('git search code'.length + 1));
-    var query = '/api/v3/search/code?q=' + queryToken.trim();
-    console.log('Query: ' + query);
-    client.get(query, {}, function (err, status, result, headers) {
+    var queryToken = message.text.substring(message.text.indexOf(key) + (key.length + 1)).trim() + ' repo:' + process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO;
+    var query = '/search/code' //'/search/code?q=' + queryToken.trim();
+    client.get(query, { q: queryToken }, function (err, status, result, headers) {
+        console.log(err);
+        console.log(status);
         console.log(headers);
         console.log(result); //json object
 
-        var text = 'Search results : *' + result.total_count + '*';
+        var text = 'Search results in '+process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO+': *' + result.total_count + '*';
+
+        // Build response message
         var attachments = [];
-        result.items.forEach(item => {
+        result.items.forEach(item => { 
             var attachment = {
-                text: item.path + '(' + item.repository.name + ')',
+                title: item.name,
                 title_link: item.html_url,
+                text: item.path
             };
             attachments.push(attachment);
         });
+
         bot.reply(message, { text: text, attachments: attachments });
+
     });
 
 });
@@ -233,7 +244,7 @@ controller.hears('teams', 'direct_message,mention,direct_mention', function (bot
 // List members of default github org
 controller.hears('members', 'direct_message,mention,direct_mention', function (bot, message) {
     var client = getGithubClient();
-    client.get('/orgs/' + process.env.GIT_ORG + '/members?per_page=50', {}, function (err, status, members, headers) {
+    client.get('/orgs/' + process.env.GIT_ORG + '/members', { per_page: 50 }, function (err, status, members, headers) {
         console.log(headers);
         console.log(members); //json object
 
@@ -383,7 +394,7 @@ controller.hears('jobs', 'direct_message,mention,direct_mention', function (bot,
                 bot.reply(message, { attachments: attachments });
             })
             .catch(console.error);
-        console.log('AFTER PROMISE ALL: ' + attachments.length)    
+        console.log('AFTER PROMISE ALL: ' + attachments.length)
     });
 });
 
@@ -392,19 +403,19 @@ controller.hears('build', 'direct_message,mention,direct_mention', function (bot
     var jenkins = getJenkinsClient();
     var keyWord = 'build'
     var jobName = message.text.substring(message.text.indexOf(keyWord) + (keyWord.length + 1));
-    jenkins.build(jobName, function(err, data) {
-        if (err){ return console.log(err); }
+    jenkins.build(jobName, function (err, data) {
+        if (err) { return console.log(err); }
         console.log(data)
         var launchedBuildMsg
         var color = 'danger'
         if (data.statusCode === 201) {
-            launchedBuildMsg = 'I launched a build for '+jobName;
+            launchedBuildMsg = 'I launched a build for ' + jobName;
             color = 'good'
         }
         else {
-            launchedBuildMsg = 'Error while launching build for'+jobName
+            launchedBuildMsg = 'Error while launching build for' + jobName
         }
-        bot.reply(message, { attachments: [{ text: launchedBuildMsg , color: color }] });
+        bot.reply(message, { attachments: [{ text: launchedBuildMsg, color: color }] });
     });
 
 });
@@ -420,34 +431,34 @@ function getJiraClient() {
         password: process.env.JIRA_PASSWORD,
         apiVersion: '2',
         strictSSL: true
-      });
-    return jira ;
+    });
+    return jira;
 }
 
 // check authentication to jiraa
 controller.hears('jirame', 'direct_message,mention,direct_mention', function (bot, message) {
     var jira = getJiraClient();
-    jira.getCurrentUser().then(function(currJiraUser) {
+    jira.getCurrentUser().then(function (currJiraUser) {
         console.log(JSON.stringify(currJiraUser));
-        bot.reply(message, { attachments: [{ text: JSON.stringify(currJiraUser,null,2) , color: 'good' }] });
-    }).catch(function(error) {
+        bot.reply(message, { attachments: [{ text: JSON.stringify(currJiraUser, null, 2), color: 'good' }] });
+    }).catch(function (error) {
         console.log(error);
-        bot.reply(message, { attachments: [{ text: JSON.stringify(error,null,2) , color: 'danger' }] });
-    }) ;
+        bot.reply(message, { attachments: [{ text: JSON.stringify(error, null, 2), color: 'danger' }] });
+    });
 });
 
 // Get current sprint info
 controller.hears('current sprint', 'direct_message,mention,direct_mention', function (bot, message) {
     var jira = getJiraClient();
 
-    jira.findRapidView(process.env.JIRA_MAIN_PROJECT_NAME).then(function(rapidView) {
+    jira.findRapidView(process.env.JIRA_MAIN_PROJECT_NAME).then(function (rapidView) {
         console.log(JSON.stringify(rapidView));
 
-        jira.getLastSprintForRapidView(rapidView.id).then(function(lastSprint) {
+        jira.getLastSprintForRapidView(rapidView.id).then(function (lastSprint) {
             console.log(JSON.stringify(lastSprint));
 
-            jira.getSprintIssues(rapidView.id,lastSprint.id).then(function(sprintIssues) {
-                console.log(JSON.stringify(sprintIssues,null,2));
+            jira.getSprintIssues(rapidView.id, lastSprint.id).then(function (sprintIssues) {
+                console.log(JSON.stringify(sprintIssues, null, 2));
 
                 // Build response message
                 var attachments = [];
@@ -466,27 +477,27 @@ controller.hears('current sprint', 'direct_message,mention,direct_mention', func
                     ];
                     var attachment = {
                         title: item.key,
-                        title_link: 'https://'+process.env.JIRA_HOST+'/browse/'+item.key,
+                        title_link: 'https://' + process.env.JIRA_HOST + '/browse/' + item.key,
                         text: item.summary,
                         fields: fields,
                         color: item.color
                     };
-                    attachments.push(attachment);  
+                    attachments.push(attachment);
                 });
 
                 bot.reply(message, { attachments: attachments });
-                
-            }).catch(function(error) {
+
+            }).catch(function (error) {
                 console.log(error);
-                bot.reply(message, { attachments: [{ text: JSON.stringify(error,null,2) , color: 'danger' }] });
+                bot.reply(message, { attachments: [{ text: JSON.stringify(error, null, 2), color: 'danger' }] });
             });
 
-        }).catch(function(error) {
+        }).catch(function (error) {
             console.log(error);
-            bot.reply(message, { attachments: [{ text: JSON.stringify(error,null,2) , color: 'danger' }] });
+            bot.reply(message, { attachments: [{ text: JSON.stringify(error, null, 2), color: 'danger' }] });
         });
-    }).catch(function(error) {
+    }).catch(function (error) {
         console.log(error);
-        bot.reply(message, { attachments: [{ text: JSON.stringify(error,null,2) , color: 'danger' }] });
-    }) ;
+        bot.reply(message, { attachments: [{ text: JSON.stringify(error, null, 2), color: 'danger' }] });
+    });
 });
