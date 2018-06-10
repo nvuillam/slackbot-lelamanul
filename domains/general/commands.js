@@ -24,7 +24,7 @@ JIRA
 
 MISC
 - *tell me* _EXPRESSION_ : Retrieves value corresponding to expression
-- *learn* EXPRESSION=VALUE : Stores value corresponding to expressiion
+- *learn* _EXPRESSION_=_VALUE_ : Stores value corresponding to expressiion
 `});
 });
 
