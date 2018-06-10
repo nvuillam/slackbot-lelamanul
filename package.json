@@ -1,6 +1,6 @@
 {
   "name": "slackbot-lelamanul",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "Mouwouuuuuuu",
   "main": "index.js",
   "scripts": {
@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "botkit": "^0.6.14",
-    "botkit-storage-mongo": "^1.0.2",
+    "botkit-storage-mongo": "^1.0.7",
     "github-api": "^3.0.0",
     "jenkins-api": "^0.3.1",
     "jira-client": "^6.4.1",

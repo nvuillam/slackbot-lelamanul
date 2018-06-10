@@ -24,10 +24,10 @@ function onInstallation(bot, installer) {
 /**
  * Libraries
  */
+var http = require('http');
 var request = require('request');
-var jenkinsapi = require('jenkins-api');
-var async = require('async');
-var JiraApi = require('jira-client');
+
+var fs = require('fs');
 
 /**
  * Configure the persistence options
@@ -35,33 +35,27 @@ var JiraApi = require('jira-client');
 
 var config = {};
 if (process.env.MONGOLAB_URI) {
-    var BotkitStorage = require('botkit-storage-mongo');
+    var mongoStorage = require('botkit-storage-mongo')({mongoUri: process.env.MONGOLAB_URI})
     config = {
-        storage: BotkitStorage({ mongoUri: process.env.MONGOLAB_URI }),
+        storage: mongoStorage ,
+        debug: true
     };
+    console.log('Mongolab storage')
 } else {
     config = {
         json_file_store: ((process.env.TOKEN) ? './db_slack_bot_ci/' : './db_slack_bot_a/'), //use a different name if an app or CI
+        debug: true
     };
+    console.log('Local storage')
 }
 
-/**
- * Are being run as an app or a custom integration? The initialization will differ, depending
- */
+var Botkit = require('botkit');
 
-if (process.env.TOKEN || process.env.SLACK_TOKEN) {
-    //Treat this as a custom integration
-    var customIntegration = require('./lib/custom_integrations');
-    var token = (process.env.TOKEN) ? process.env.TOKEN : process.env.SLACK_TOKEN;
-    var controller = customIntegration.configure(token, config, onInstallation);
-} else if (process.env.CLIENT_ID && process.env.CLIENT_SECRET && process.env.PORT) {
-    //Treat this as an app
-    var app = require('./lib/apps');
-    var controller = app.configure(process.env.PORT, process.env.CLIENT_ID, process.env.CLIENT_SECRET, config, onInstallation);
-} else {
-    console.log('Error: If this is a custom integration, please specify TOKEN in the environment. If this is an app, please specify CLIENTID, CLIENTSECRET, and PORT in the environment');
-    process.exit(1);
-}
+var controller = Botkit.slackbot(config);
+
+var bot = controller.spawn({
+    token: process.env.token
+}).startRTM();
 
 // Handle events related to the websocket connection to Slack
 controller.on('rtm_open', function (bot) {
@@ -73,438 +67,25 @@ controller.on('rtm_close', function (bot) {
     // you may want to attempt to re-open
 });
 
+///// INCLUDES 
 
-/**
- * Core bot logic goes here!
- */
-// BEGIN EDITING HERE!
+// General
+eval(fs.readFileSync('./domains/general/commands.js')+'')
 
-controller.on('bot_channel_join', function (bot, message) {
-    bot.reply(message, "I'm here!")
-});
+// Github
+eval(fs.readFileSync('./domains/github/commands.js')+'')
 
-controller.hears('hello', 'direct_message,mention,direct_mention', function (bot, message) {
-    bot.reply(message, 'Hello!');
-});
+// Jenkins
+eval(fs.readFileSync('./domains/jenkins/commands.js')+'')
 
-controller.hears('youhou', 'direct_message,mention,direct_mention', function (bot, message) {
-    bot.reply(message, '... houuu ... houuu .... houu ....');
-});
+// Jenkins
+eval(fs.readFileSync('./domains/jira/commands.js')+'')
 
-// HELP
-controller.hears('help', 'direct_message,mention,direct_mention', function (bot, message) {
-    bot.reply(message, {
-        text: `Commands for lelamanul
+// Miscellaneous
+eval(fs.readFileSync('./domains/misc/commands.js')+'')
 
-GITHUB:
-- *members* : List members of ${process.env.GIT_ORG}
-- *pull requests* : List open pull requests of ${process.env.GIT_ORG}/${process.env.GIT_MAIN_REPO}
-- *search code* _CODE_ : Search in ${process.env.GIT_MAIN_REPO} code (ex: _search code Membership_m_ )
-- *search doc* _KEYWORDS_ : Search in ${process.env.GIT_ORG} doc (ex: _search doc Installation pre-requisites_ )
-- *repos* : List repos of ${process.env.GIT_ORG}
-- *teams* : List teams of ${process.env.GIT_ORG}
-
-JENKINS
-- *jobs* : List all jenkins jobs of ${process.env.JENKINS_MAIN_VIEW}
-- *build* _JOB_NAME_ : Launch a build for the job name specified ( ex: _build DXCO4SF-1150-TST-DevRootOrg_ )
-
-JIRA
-- *current sprint* : List open issues of the current sprint
-`});
-});
-
-//////////// GITHUB ////////////
-
-// Login to github
-function getGithubClient() {
-    var github = require('octonode');
-
-    var scopes = {
-        'scopes': ['user', 'repo', 'gist', 'admin:org'],
-        'note': 'admin script'
-    };
-
-    github.auth.config({
-        username: process.env.GIT_USERNAME,
-        password: process.env.GIT_PASSWORD
-    }).login(scopes, function (err, id, token, headers) {
-        console.log(id, token);
-    });
-
-    var client = github.client({
-        username: process.env.GIT_USERNAME,
-        password: process.env.GIT_PASSWORD
-    }, {
-            hostname: process.env.GIT_HOSTNAME
-        });
-
-    return client;
-}
-
-// Search in github code 
-controller.hears('search code', 'direct_message,mention,direct_mention', function (bot, message) {
-    var key = 'search code'
-    var client = getGithubClient();
-    var queryToken = message.text.substring(message.text.indexOf(key) + (key.length + 1)).trim() + ' repo:' + process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO;
-    var query = '/search/code' //'/search/code?q=' + queryToken.trim();
-    client.get(query, { q: queryToken }, function (err, status, result, headers) {
-        console.log(err);
-        console.log(status);
-        console.log(headers);
-        console.log(result); //json object
-
-        var text = 'Search results in '+process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO+': *' + result.total_count + '*';
-
-        // Build response message
-        var attachments = [];
-        result.items.forEach(item => { 
-            var attachment = {
-                title: item.name,
-                title_link: item.html_url,
-                text: item.path
-            };
-            attachments.push(attachment);
-        });
-
-        bot.reply(message, { text: text, attachments: attachments });
-
-    });
-});
-
-// Search in github wikis (just provide link, search in wikis is not provided yet by github api)
-controller.hears('search doc', 'direct_message,mention,direct_mention', function (bot, message) {
-    var key = 'search doc'
-    var queryToken = encodeURIComponent(message.text.substring(message.text.indexOf(key) + (key.length + 1)).trim());
-    var searchWikiUrl = 'https://'+process.env.GIT_HOSTNAME.replace('/api/v3','')+'/search?q=org%3A'+process.env.GIT_ORG+'+'+queryToken+'&type=Wikis'
-    bot.reply(message, { attachments: [{ text: searchWikiUrl }] });
-});
-
-// List members of default github org
-controller.hears('pull requests', 'direct_message,mention,direct_mention', function (bot, message) {
-    var client = getGithubClient();
-    client.get('/repos/' + process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO + '/pulls', {per_page:100}, function (err, status, pullRequests, headers) {
-        console.log(headers);
-        console.log(pullRequests); //json object
-        var text = 'Repo *' + process.env.GIT_MAIN_REPO + '* contains *' + pullRequests.length + '* pull requests\n';
-        var attachments = [];
-        pullRequests.forEach(pullRequest => {
-            var attachment = {
-                title: pullRequest.title,
-                title_link: pullRequest.html_url,
-                fields: [
-                    {
-                        title: "User",
-                        value: pullRequest.user.login,
-                        short: true
-                    },
-                    {
-                        title: "Status",
-                        value: pullRequest.state,
-                        short: true
-                    }
-                ]
-            };
-            attachments.push(attachment);
-        });
-        bot.reply(message, { text: text, attachments: attachments });
-    });
-
-});
-
-// List teams of default org
-controller.hears('teams', 'direct_message,mention,direct_mention', function (bot, message) {
-    var client = getGithubClient();
-    client.get('/orgs/' + process.env.GIT_ORG + '/teams', {per_page:100}, function (err, status, teams, headers) {
-        console.log(headers);
-        console.log(teams); //json object
-
-        var text = 'Organization *' + process.env.GIT_ORG + '* contains *' + teams.length + '* team(s)\n';
-        var attachments = []
-        teams.forEach(team => {
-            var attachment = {
-                //text:'- <'+encodeURI(team.url)+'|'+team.name+">  \n",
-                color: 'good',
-                title: team.name,
-                title_link: team.url,
-                actions: [
-                    {
-                        type: "button",
-                        text: "Members",
-                        url: team.members_url
-                    },
-                    {
-                        type: "button",
-                        text: "Repos",
-                        url: team.repositories_url
-                    }
-                ]
-            }
-            attachments.push(attachment);
-
-
-        });
-        bot.reply(message, { text: text, attachments: attachments });
-    });
-
-});
-
-// List members of default github org
-controller.hears('members', 'direct_message,mention,direct_mention', function (bot, message) {
-    var client = getGithubClient();
-    client.get('/orgs/' + process.env.GIT_ORG + '/members', { per_page: 100 }, function (err, status, members, headers) {
-        console.log(headers);
-        console.log(members); //json object
-
-        var memberListStr = 'Organization *' + process.env.GIT_ORG + '* contains *' + members.length + '* member(s)\n';
-        members.forEach(member => {
-            memberListStr += '- <' + encodeURI(member.html_url) + '|' + member.login + ">  \n";
-        });
-        console.log('Formatted member list \n' + memberListStr);
-        bot.reply(message, { attachments: [{ text: memberListStr }] });
-    });
-
-});
-
-// List default org repositories
-controller.hears('repos', 'direct_message,mention,direct_mention', function (bot, message) {
-    var client = getGithubClient();
-    client.get('/orgs/' + process.env.GIT_ORG + '/repos', {per_page:100}, function (err, status, repos, headers) {
-        console.log(headers);
-        console.log(repos); //json object
-        var text = 'Repo *' + process.env.GIT_ORG + '* contains *' + repos.length + '* repositories \n';
-        var attachments = [];
-        repos.forEach(repo => {
-            var fields = [];
-            if (repo.description != null) {
-                fields.push({
-                    title: "Description",
-                    value: repo.description,
-                    short: true
-                });
-            }
-            if (repo.language != null) {
-                fields.push({
-                    title: "Language",
-                    value: repo.language,
-                    short: true
-                });
-            }
-            var attachment = {
-                title: repo.name,
-                title_link: repo.html_url,
-                fields: fields,
-                color: 'good'
-            };
-            attachments.push(attachment);
-        });
-        bot.reply(message, { text: text, attachments: attachments });
-    });
-});
-
-
-// Check github user
-controller.hears('githubme', 'direct_message,mention,direct_mention', function (bot, message) {
-
-    var client = getGithubClient();
-    var ghme = client.me();
-
-    ghme.info(function (err, data, headers) {
-        console.log("error: " + err);
-        console.log("data: " + JSON.stringify(data));
-        console.log("headers:" + JSON.stringify(headers));
-        bot.reply(message, JSON.stringify(data, null, 2));
-    });
-
-    ghme.orgs(function (err2, data2, headers2) {
-        console.log("error: " + err2);
-        console.log("data: " + JSON.stringify(data2));
-        console.log("headers:" + JSON.stringify(headers2));
-        bot.reply(message, JSON.stringify(data2, null, 2));
-
-    });
-
-});
-
-//////////// JENKINS ///////////////
-
-function getJenkinsClient() {
-    console.log("http://" + process.env.JENKINS_USERNAME + ":" + process.env.JENKINS_PASSWORD + "@" + process.env.JENKINS_HOST)
-    var jenkins = jenkinsapi.init("http://" + process.env.JENKINS_USERNAME + ":" + process.env.JENKINS_PASSWORD + "@" + process.env.JENKINS_HOST);
-    return jenkins;
-}
-
-// Get current queue
-controller.hears('queue', 'direct_message,mention,direct_mention', function (bot, message) {
-    var jenkins = getJenkinsClient();
-    jenkins.queue(function (err, data) {
-        if (err) { return console.log(err); }
-        console.log(data);
-        bot.reply(message, JSON.stringify(data, null, 2));
-    });
-});
-
-// List all jobs
-controller.hears('jobs', 'direct_message,mention,direct_mention', function (bot, message) {
-    var jenkins = getJenkinsClient();
-    jenkins.all_jobs_in_view(process.env.JENKINS_MAIN_VIEW, function (err, jobs) {
-        if (err) { return console.log(err); }
-        console.log(jobs);
-        var attachments = [];
-        var promiseJobAll = jobs.map(function (item) {
-            return new Promise(function (resolve, reject) {
-                var fields = [];
-                var color = 'warning';
-                jenkins.job_info(item.name, function (err2, jobInfo) {
-                    if (err2) { return console.log(err2); }
-                    console.log('\n\n\n')
-                    console.log(JSON.stringify(jobInfo, null, 2))
-                    if (jobInfo.description != null && jobInfo.description != "") {
-                        fields.push({
-                            title: "Description",
-                            value: jobInfo.description,
-                            short: false
-                        });
-                    }
-                    /*if (jobInfo.healthReport != null && jobInfo.healthReport[0].description != null) {
-                        fields.push({
-                            title: "Health",
-                            value: jobInfo.healthReport[0].description,
-                            short: false
-                        });
-                    } */
-                    if (jobInfo.healthReport != null && jobInfo.healthReport[0] != null && jobInfo.healthReport[0].score != null) {
-                        fields.push({
-                            title: "Score",
-                            value: '*' + jobInfo.healthReport[0].score + '* /100',
-                            short: false
-                        });
-                        if (jobInfo.healthReport[0].score == 100)
-                            color = 'good'
-                        else if (jobInfo.healthReport[0].score <= 70) {
-                            color = 'danger'
-                        }
-                    }
-                    var attachment = {
-                        title: item.name,
-                        title_link: item.url,
-                        fields: fields,
-                        color: color
-                    };
-                    attachments.push(attachment);
-                    resolve()
-                });
-            });
-        });
-        console.log('BEFORE PROMISE ALL: ' + attachments.length)
-        Promise.all(promiseJobAll)
-            .then(function () {
-                bot.reply(message, { attachments: attachments });
-            })
-            .catch(console.error);
-        console.log('AFTER PROMISE ALL: ' + attachments.length)
-    });
-});
-
-// Launch a new job build
-controller.hears('build', 'direct_message,mention,direct_mention', function (bot, message) {
-    var jenkins = getJenkinsClient();
-    var keyWord = 'build'
-    var jobName = message.text.substring(message.text.indexOf(keyWord) + (keyWord.length + 1));
-    jenkins.build(jobName, function (err, data) {
-        if (err) { return console.log(err); }
-        console.log(data)
-        var launchedBuildMsg
-        var color = 'danger'
-        if (data.statusCode === 201) {
-            launchedBuildMsg = 'I launched a build for ' + jobName;
-            color = 'good'
-        }
-        else {
-            launchedBuildMsg = 'Error while launching build for' + jobName
-        }
-        bot.reply(message, { attachments: [{ text: launchedBuildMsg, color: color }] });
-    });
-
-});
-
-/////////////// JIRA ////////////////////
-
-// Initialize
-function getJiraClient() {
-    var jira = new JiraApi({
-        protocol: 'https',
-        host: process.env.JIRA_HOST,
-        username: process.env.JIRA_USERNAME,
-        password: process.env.JIRA_PASSWORD,
-        apiVersion: '2',
-        strictSSL: true
-    });
-    return jira;
-}
-
-// check authentication to jiraa
-controller.hears('jirame', 'direct_message,mention,direct_mention', function (bot, message) {
-    var jira = getJiraClient();
-    jira.getCurrentUser().then(function (currJiraUser) {
-        console.log(JSON.stringify(currJiraUser));
-        bot.reply(message, { attachments: [{ text: JSON.stringify(currJiraUser, null, 2), color: 'good' }] });
-    }).catch(function (error) {
-        console.log(error);
-        bot.reply(message, { attachments: [{ text: JSON.stringify(error, null, 2), color: 'danger' }] });
-    });
-});
-
-// Get current sprint info
-controller.hears('current sprint', 'direct_message,mention,direct_mention', function (bot, message) {
-    var jira = getJiraClient();
-
-    jira.findRapidView(process.env.JIRA_MAIN_PROJECT_NAME).then(function (rapidView) {
-        console.log(JSON.stringify(rapidView));
-
-        jira.getLastSprintForRapidView(rapidView.id).then(function (lastSprint) {
-            console.log(JSON.stringify(lastSprint));
-
-            jira.getSprintIssues(rapidView.id, lastSprint.id).then(function (sprintIssues) {
-                console.log(JSON.stringify(sprintIssues, null, 2));
-
-                // Build response message
-                var attachments = [];
-                sprintIssues.contents.issuesNotCompletedInCurrentSprint.forEach(item => {
-                    var fields = [
-                        {
-                            title: "Status",
-                            value: item.status.name,
-                            short: true
-                        },
-                        {
-                            title: "Assignee",
-                            value: item.assigneeName,
-                            short: true
-                        }
-                    ];
-                    var attachment = {
-                        title: item.key,
-                        title_link: 'https://' + process.env.JIRA_HOST + '/browse/' + item.key,
-                        text: item.summary,
-                        fields: fields,
-                        color: item.color
-                    };
-                    attachments.push(attachment);
-                });
-
-                bot.reply(message, { attachments: attachments });
-
-            }).catch(function (error) {
-                console.log(error);
-                bot.reply(message, { attachments: [{ text: JSON.stringify(error, null, 2), color: 'danger' }] });
-            });
-
-        }).catch(function (error) {
-            console.log(error);
-            bot.reply(message, { attachments: [{ text: JSON.stringify(error, null, 2), color: 'danger' }] });
-        });
-    }).catch(function (error) {
-        console.log(error);
-        bot.reply(message, { attachments: [{ text: JSON.stringify(error, null, 2), color: 'danger' }] });
-    });
-});
+// To keep Heroku's free dyno awake
+http.createServer(function(request, response) {
+    response.writeHead(200, {'Content-Type': 'text/plain'});
+    response.end('Ok, dyno is awake.');
+}).listen(process.env.PORT || 5000);
