@@ -88,4 +88,4 @@ eval(fs.readFileSync('./domains/misc/commands.js')+'')
 http.createServer(function(request, response) {
     response.writeHead(200, {'Content-Type': 'text/plain'});
     response.end('Ok, dyno is awake.');
-}).listen(process.env.PORT || 5000);
+}).listen(5000);
