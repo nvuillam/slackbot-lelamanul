@@ -6,10 +6,12 @@
 
 - Define the following environment variable in Heroku app
 
+
   - MY_HOST : Your app current host (ex: https://myapp.herokuapp.com )
-  - CLIENT_ID : Slack App client Id (ex: 424298597.3788425242061)
-  - CLIENT_SECRET : Slack App client secret (ex: 54575272754f2bb0468105513e60)
+  - token: Slack bot token ( ex: dfh54dg56hf46ggh64fg56gh564fg46fh)
   - PORT : Your bot port (ex: 8765)
+  
+  - MONGOLAB_URI : URI of mongo database 
 
   - GIT_USERNAME : Your github username ( ex: nvuillam )
   - GIT_PASSWORD : Your github password or token ( ex: dfdgdhgh6d46fg4h6fgfg6 )
