@@ -4,6 +4,7 @@ var os = require('os');
 
 // HELP
 controller.hears('^help', 'direct_message,mention,direct_mention', function (bot, message) {
+    bot.startTyping(message, function () {});
     bot.reply(message, {
         text: `Commands for lelamanul
 
@@ -17,6 +18,7 @@ GITHUB:
 
 JENKINS
 - *jobs* : List all jenkins jobs of ${process.env.JENKINS_MAIN_VIEW}
+- *running jobs* : List all currently running jobs
 - *build* _JOB_NAME_ : Launch a build for the job name specified ( ex: _build DXCO4SF-1150-TST-DevRootOrg_ )
 
 JIRA
@@ -30,6 +32,7 @@ MISC
 
 // UPTIME
 controller.hears(['^uptime', '^identify yourself', '^who are you', '^what is your name'],'direct_message,direct_mention,mention', function(bot, message) {
+    bot.startTyping(message, function () {});
     var hostname = os.hostname();
     var uptime = formatUptime(process.uptime());
     bot.reply(message,

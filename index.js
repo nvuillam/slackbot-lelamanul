@@ -26,10 +26,10 @@ var mongoStorage = require('botkit-storage-mongo')({ mongoUri: process.env.MONGO
 config = {
     storage: mongoStorage,
     port: process.env.PORT,
+    interactive_replies: true,
     debug: true
 };
 console.log('Mongolab storage')
-
 
 
 var controller = Botkit.slackbot(config);
@@ -88,6 +88,14 @@ eval(fs.readFileSync('./domains/jira/commands.js') + '')
 // Miscellaneous
 eval(fs.readFileSync('./domains/misc/commands.js') + '')
 
+// Interactive messages callbacks
+controller.on('interactive_message_callback', function(bot, message) {
+    var callbackId = message.callback_id;
+    var domain = callbackId.substring(0,callbackId.indexOf(':'))
+    var method = callbackId.substring(callbackId.indexOf(':')+1)
+    var functionName = 'interactive_'+domain+'_'+method ;
+    global[functionName](bot,message) 
+});
 
 // To keep Heroku's free dyno awake
 http.createServer(function(request, response) {

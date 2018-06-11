@@ -27,11 +27,12 @@ function getGithubClient() {
 }
 
 // Search in github code 
-controller.hears('^search code', 'direct_message,mention,direct_mention', function (bot, message) {
-    var key = 'search code'
+controller.hears(['^search code (.*)'], 'direct_message,mention,direct_mention', function (bot, message) {
+    bot.startTyping(message, function () {});
+    var key = message.match[1].trim();
     var client = getGithubClient();
-    var queryToken = message.text.substring(message.text.indexOf(key) + (key.length + 1)).trim() + ' repo:' + process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO;
-    var query = '/search/code' //'/search/code?q=' + queryToken.trim();
+    var queryToken = key + ' repo:' + process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO;
+    var query = '/search/code' 
     client.get(query, { q: queryToken }, function (err, status, result, headers) {
         console.log(err);
         console.log(status);
@@ -57,15 +58,16 @@ controller.hears('^search code', 'direct_message,mention,direct_mention', functi
 });
 
 // Search in github wikis (just provide link, search in wikis is not provided yet by github api)
-controller.hears('^search doc', 'direct_message,mention,direct_mention', function (bot, message) {
-    var key = 'search doc'
-    var queryToken = encodeURIComponent(message.text.substring(message.text.indexOf(key) + (key.length + 1)).trim());
+controller.hears(['^search doc (.*)','^search wiki (.*)'], 'direct_message,mention,direct_mention', function (bot, message) {
+    bot.startTyping(message, function () {});
+    var queryToken = encodeURIComponent(message.match[1].trim());
     var searchWikiUrl = 'https://'+process.env.GIT_HOSTNAME.replace('/api/v3','')+'/search?q=org%3A'+process.env.GIT_ORG+'+'+queryToken+'&type=Wikis'
     bot.reply(message, { attachments: [{ text: searchWikiUrl }] });
 });
 
 // List members of default github org
 controller.hears('^pull requests', 'direct_message,mention,direct_mention', function (bot, message) {
+    bot.startTyping(message, function () {});
     var client = getGithubClient();
     client.get('/repos/' + process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO + '/pulls', {per_page:100}, function (err, status, pullRequests, headers) {
         console.log(headers);
@@ -98,6 +100,7 @@ controller.hears('^pull requests', 'direct_message,mention,direct_mention', func
 
 // List teams of default org
 controller.hears('^teams', 'direct_message,mention,direct_mention', function (bot, message) {
+    bot.startTyping(message, function () {});
     var client = getGithubClient();
     client.get('/orgs/' + process.env.GIT_ORG + '/teams', {per_page:100}, function (err, status, teams, headers) {
         console.log(headers);
@@ -135,6 +138,7 @@ controller.hears('^teams', 'direct_message,mention,direct_mention', function (bo
 
 // List members of default github org
 controller.hears('^members', 'direct_message,mention,direct_mention', function (bot, message) {
+    bot.startTyping(message, function () {});
     var client = getGithubClient();
     client.get('/orgs/' + process.env.GIT_ORG + '/members', { per_page: 100 }, function (err, status, members, headers) {
         console.log(headers);
@@ -152,6 +156,7 @@ controller.hears('^members', 'direct_message,mention,direct_mention', function (
 
 // List default org repositories
 controller.hears('^repos', 'direct_message,mention,direct_mention', function (bot, message) {
+    bot.startTyping(message, function () {});
     var client = getGithubClient();
     client.get('/orgs/' + process.env.GIT_ORG + '/repos', {per_page:100}, function (err, status, repos, headers) {
         console.log(headers);
@@ -189,7 +194,7 @@ controller.hears('^repos', 'direct_message,mention,direct_mention', function (bo
 
 // Check github user
 controller.hears('^githubme', 'direct_message,mention,direct_mention', function (bot, message) {
-
+    bot.startTyping(message, function () {});
     var client = getGithubClient();
     var ghme = client.me();
 
