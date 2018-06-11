@@ -35,7 +35,7 @@ controller.hears(['call me (.*)', 'my name is (.*)'], 'direct_message,direct_men
 });
 
 controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention,mention', function(bot, message) {
-
+    console.log('who is '+message.user)
     controller.storage.users.get(message.user, function(err, user) {
         if (user && user.name) {
             bot.reply(message, 'You are ' + user.name);
@@ -104,7 +104,7 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
 
 const tellMeTeamId = 'dxco4sf'
 
-controller.hears(['tell me (.*)','dis moi (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['tell (.*)','tell me (.*)','dis moi (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var key = message.match[1];
     controller.storage.teams.get(tellMeTeamId, function(err, team) {
         if (err) {
@@ -136,6 +136,38 @@ controller.hears(['learn (.*)','apprends (.*)'], 'direct_message,direct_mention,
                 console.log('Error while learning word '+err.toString())
             else
                 bot.reply(message, 'Ok :lelamanul:');
+        });
+    });
+});
+
+controller.hears(['who is (.*)','qui est (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+    var username = message.match[1].replace('?','').replace('@','').replace('<','').replace('>','').trim();
+    console.log('who is '+username)
+    controller.storage.users.get(username, function(err, user) {
+        if (user && user.name) {
+            bot.reply(message, '<@'+username+'> is ' + user.name);
+        }
+        else {
+            bot.reply(message, 'I don\'t know. Say *call <@'+username+'> NAME* to store it');
+        }
+    });
+});
+
+controller.hears(['call (.*) (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+    var usernameNickname = message.match[1].replace('@','').replace('<','').replace('>','').trim();
+    var username = usernameNickname.substring(0,usernameNickname.indexOf(' '))
+    var nickname = usernameNickname.substring(usernameNickname.indexOf(' ')+1)
+    console.log('username: '+username)
+    console.log('nickname: '+nickname)
+    controller.storage.users.get(username, function(err, user) {
+        if (!user) {
+            user = {
+                id: username,
+            };
+        }
+        user.name = nickname;
+        controller.storage.users.save(user, function(err, id) {
+            bot.reply(message, 'Got it. I will call <@' + username + '> ' + user.name + ' from now on.');
         });
     });
 });
