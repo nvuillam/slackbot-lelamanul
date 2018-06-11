@@ -16,7 +16,7 @@ function getJiraClient() {
 }
 
 // check authentication to jiraa
-controller.hears('jirame', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('^jirame', 'direct_message,mention,direct_mention', function (bot, message) {
     var jira = getJiraClient();
     jira.getCurrentUser().then(function (currJiraUser) {
         console.log(JSON.stringify(currJiraUser));
@@ -28,7 +28,7 @@ controller.hears('jirame', 'direct_message,mention,direct_mention', function (bo
 });
 
 // Get current sprint info
-controller.hears('current sprint', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('^current sprint', 'direct_message,mention,direct_mention', function (bot, message) {
     var jira = getJiraClient();
 
     jira.findRapidView(process.env.JIRA_MAIN_PROJECT_NAME).then(function (rapidView) {

@@ -1,4 +1,4 @@
-controller.hears(['hello'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^hello'], 'direct_message,direct_mention,mention', function(bot, message) {
     bot.api.reactions.add({
         timestamp: message.ts,
         channel: message.channel,
@@ -19,7 +19,7 @@ controller.hears(['hello'], 'direct_message,direct_mention,mention', function(bo
     });
 });
 
-controller.hears(['call me (.*)', 'my name is (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^call me (.*)', '^my name is (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var name = message.match[1];
     controller.storage.users.get(message.user, function(err, user) {
         if (!user) {
@@ -34,7 +34,7 @@ controller.hears(['call me (.*)', 'my name is (.*)'], 'direct_message,direct_men
     });
 });
 
-controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^what is my name', '^who am i'], 'direct_message,direct_mention,mention', function(bot, message) {
     console.log('who is '+message.user)
     controller.storage.users.get(message.user, function(err, user) {
         if (user && user.name) {
@@ -104,7 +104,7 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
 
 const tellMeTeamId = 'dxco4sf'
 
-controller.hears(['tell (.*)','tell me (.*)','dis moi (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^tell (.*)','^tell me (.*)','^dis moi (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var key = message.match[1];
     controller.storage.teams.get(tellMeTeamId, function(err, team) {
         if (err) {
@@ -123,7 +123,7 @@ controller.hears(['tell (.*)','tell me (.*)','dis moi (.*)'], 'direct_message,di
     });
 });
 
-controller.hears(['learn (.*)','apprends (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^learn (.*)','^apprends (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var keyVal = message.match[1];
     var key = keyVal.substring(0,keyVal.indexOf('='));
     var val = keyVal.substring(keyVal.indexOf('=')+1);
@@ -140,7 +140,7 @@ controller.hears(['learn (.*)','apprends (.*)'], 'direct_message,direct_mention,
     });
 });
 
-controller.hears(['who is (.*)','qui est (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^who is (.*)','^qui est (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var username = message.match[1].replace('?','').replace('@','').replace('<','').replace('>','').trim();
     console.log('who is '+username)
     controller.storage.users.get(username, function(err, user) {
@@ -153,7 +153,7 @@ controller.hears(['who is (.*)','qui est (.*)'], 'direct_message,direct_mention,
     });
 });
 
-controller.hears(['call (.*) (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^call (.*) (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var usernameNickname = message.match[1].replace('@','').replace('<','').replace('>','').trim();
     var username = usernameNickname.substring(0,usernameNickname.indexOf(' '))
     var nickname = usernameNickname.substring(usernameNickname.indexOf(' ')+1)

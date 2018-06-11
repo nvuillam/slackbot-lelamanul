@@ -3,7 +3,7 @@
 var os = require('os');
 
 // HELP
-controller.hears('help', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('^help', 'direct_message,mention,direct_mention', function (bot, message) {
     bot.reply(message, {
         text: `Commands for lelamanul
 
@@ -29,7 +29,7 @@ MISC
 });
 
 // UPTIME
-controller.hears(['uptime', 'identify yourself', 'who are you', 'what is your name'],'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^uptime', '^identify yourself', '^who are you', '^what is your name'],'direct_message,direct_mention,mention', function(bot, message) {
     var hostname = os.hostname();
     var uptime = formatUptime(process.uptime());
     bot.reply(message,
@@ -58,10 +58,6 @@ function formatUptime(uptime) {
 // MISC
 controller.on('bot_channel_join', function (bot, message) {
     bot.reply(message, "I'm here!")
-});
-
-controller.hears('hello', 'direct_message,mention,direct_mention', function (bot, message) {
-    bot.reply(message, 'Hello!');
 });
 
 controller.hears('youhou', 'direct_message,mention,direct_mention', function (bot, message) {

@@ -10,7 +10,7 @@ function getJenkinsClient() {
 }
 
 // Get current queue
-controller.hears('queue', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('^queue', 'direct_message,mention,direct_mention', function (bot, message) {
     var jenkins = getJenkinsClient();
     jenkins.queue(function (err, data) {
         if (err) { return console.log(err); }
@@ -20,7 +20,7 @@ controller.hears('queue', 'direct_message,mention,direct_mention', function (bot
 });
 
 // List all jobs
-controller.hears('jobs', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('^jobs', 'direct_message,mention,direct_mention', function (bot, message) {
     var jenkins = getJenkinsClient();
     jenkins.all_jobs_in_view(process.env.JENKINS_MAIN_VIEW, function (err, jobs) {
         if (err) { return console.log(err); }
@@ -82,7 +82,7 @@ controller.hears('jobs', 'direct_message,mention,direct_mention', function (bot,
 });
 
 // Launch a new job build
-controller.hears('build', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('^build', 'direct_message,mention,direct_mention', function (bot, message) {
     var jenkins = getJenkinsClient();
     var keyWord = 'build'
     var jobName = message.text.substring(message.text.indexOf(keyWord) + (keyWord.length + 1));
