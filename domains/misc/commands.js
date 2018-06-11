@@ -38,7 +38,7 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
 
     controller.storage.users.get(message.user, function(err, user) {
         if (user && user.name) {
-            bot.reply(message, 'Your name is ' + user.name);
+            bot.reply(message, 'You are ' + user.name);
         } else {
             bot.startConversation(message, function(err, convo) {
                 if (!err) {
@@ -104,7 +104,7 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
 
 const tellMeTeamId = 'dxco4sf'
 
-controller.hears(['tell me (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['tell me (.*)','dis moi (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var key = message.match[1];
     controller.storage.teams.get(tellMeTeamId, function(err, team) {
         if (err) {
@@ -113,7 +113,7 @@ controller.hears(['tell me (.*)'], 'direct_message,direct_mention,mention', func
         if (team && team.tell_me_list && team.tell_me_list[key]) {
             bot.reply(message, team.tell_me_list[key]);
         }
-        else if (team && team.tell_me_list && key === 'everything') {
+        else if (team && team.tell_me_list && (key === 'everything' || key === 'tout')) {
             bot.reply(message,'Here\'s what i know: '+Object.keys(team.tell_me_list));
         }
         else {
@@ -123,7 +123,7 @@ controller.hears(['tell me (.*)'], 'direct_message,direct_mention,mention', func
     });
 });
 
-controller.hears(['learn (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['learn (.*)','apprends (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var keyVal = message.match[1];
     var key = keyVal.substring(0,keyVal.indexOf('='));
     var val = keyVal.substring(keyVal.indexOf('=')+1);
