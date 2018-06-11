@@ -23,6 +23,8 @@ JENKINS
 
 JIRA
 - *current sprint* : List open issues of the current sprint
+- *issues of* _USER_ : List open issues of a user ( use @mention)  )
+- *my issues*  : List your open issues
 
 MISC
 - *tell me* _EXPRESSION_ : Retrieves value corresponding to expression

@@ -94,6 +94,7 @@ controller.on('interactive_message_callback', function(bot, message) {
     var domain = callbackId.substring(0,callbackId.indexOf(':'))
     var method = callbackId.substring(callbackId.indexOf(':')+1)
     var functionName = 'interactive_'+domain+'_'+method ;
+    console.log('INTERACTIVE RECEPTION: '+functionName)
     global[functionName](bot,message) 
 });
 

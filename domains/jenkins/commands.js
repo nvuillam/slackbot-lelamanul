@@ -66,11 +66,11 @@ controller.hears('^jobs', 'direct_message,mention,direct_mention', function (bot
                         title: item.name,
                         title_link: item.url,
                         fields: fields,
-                        callback_id: 'jenkins:job_build',
+                        callback_id: 'jenkins:job_list',
                         actions: [
                             {
                                 "text": "Build",
-                                "name": "build",
+                                "name": "launch_build",
                                 "value": JSON.stringify({jobName: item.name}),
                                 "type": "button",
                                 "confirm": {
@@ -127,11 +127,11 @@ controller.hears(['^running jobs', '^current builds'], 'direct_message,mention,d
                     var attachment = {
                         title: buildInfo.fullDisplayName,
                         title_link: buildInfo.url,
-                        callback_id: 'jenkins:stop_build',
+                        callback_id: 'jenkins:job_list',
                         actions: [
                             {
                                 "text": "Cancel",
-                                "name": "cancel",
+                                "name": "stop_build",
                                 "value": JSON.stringify({jobName: item.name,buildId: buildInfo.id }),
                                 "style": "danger",
                                 "type": "button",
@@ -162,59 +162,52 @@ controller.hears(['^running jobs', '^current builds'], 'direct_message,mention,d
 
 ////////////////// Interactive functions ////////////////////
 
-// Build job button
-global.interactive_jenkins_job_build = function interactive_jenkins_job_build(bot,message) {
+// job list buttons
+global.interactive_jenkins_job_list = function interactive_jenkins_job_list(bot,message) {
     bot.startTyping(message, function () { });
-    var value = JSON.parse(message.actions[0].value)
-    var jobName = value.jobName
-    jobBuild(bot,message,jobName)
-}
-
-// Cancel build button
-global.interactive_jenkins_stop_build = function interactive_jenkins_stop_build(bot,message) {
-    bot.startTyping(message, function () { });
-    var value = JSON.parse(message.actions[0].value)
-    var jobName = value.jobName
-    var buildId = value.buildId
-    stopBuild(bot,message,jobName,buildId)
+    var actionValue = JSON.parse(message.actions[0].value)
+    switch(message.actions[0].name) {
+        case 'launch_build' : jobBuild(bot,message,actionValue) ; break ;
+        case 'stop_build' : stopBuild(bot,message,actionValue) ; break ;
+    }
 }
 
 /////////////////// Common functions ////////////////////////
 
 // New build
-function jobBuild(bot,message,jobName) {
+function jobBuild(bot,message,actionValue) {
     var jenkins = getJenkinsClient();
-    jenkins.build(jobName, function (err, data) {
+    jenkins.build(actionValue.jobName, function (err, data) {
         if (err) { return console.log(err); }
         console.log(data)
         var launchedBuildMsg
         var color = 'danger'
         if (data.statusCode === 201) {
-            launchedBuildMsg = 'I launched a build for ' + jobName;
+            launchedBuildMsg = 'I launched a build for ' + actionValue.jobName;
             color = 'good'
         }
         else {
-            launchedBuildMsg = 'Error while launching build for' + jobName
+            launchedBuildMsg = 'Error while launching build for' + actionValue.jobName
         }
         bot.reply(message, { attachments: [{ text: launchedBuildMsg, color: color }] });
     });
 }
 
 // Stop build
-function stopBuild(bot,message,jobName,buildId) {
+function stopBuild(bot,message,actionValue) {
     var jenkins = getJenkinsClient();
-    console.log('STOPPING JENKINS BUILD '+ jobName + ' #'+buildId)
-    jenkins.stop_build(jobName,buildId, function (err, data) {
+    console.log('STOPPING JENKINS BUILD '+ actionValue.jobName + ' #'+actionValue.buildId)
+    jenkins.stop_build(actionValue.jobName,actionValue.buildId, function (err, data) {
         if (err) { return console.log(err); }
         console.log(data)
         var stoppedBuildMsg
         var color = 'danger'
         if (data.statusCode === 200) {
-            stoppedBuildMsg = 'I stopped build ' + jobName + ' #'+buildId;
+            stoppedBuildMsg = 'I stopped build ' + actionValue.jobName + ' #'+actionValue.buildId;
             color = 'good'
         }
         else {
-            stoppedBuildMsg = 'Error while stopping build ' + jobName + ' #'+buildId
+            stoppedBuildMsg = 'Error while stopping build ' + actionValue.jobName + ' #'+actionValue.buildId
         }
         bot.reply(message, { attachments: [{ text: stoppedBuildMsg, color: color }] });
     });

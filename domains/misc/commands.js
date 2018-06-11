@@ -108,7 +108,7 @@ const tellMeTeamId = 'dxco4sf'
 
 controller.hears(['^tell (.*)','^tell me (.*)','^dis moi (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     bot.startTyping(message, function () {});
-    var key = message.match[1];
+    var key = message.match[1].trim();
     controller.storage.teams.get(tellMeTeamId, function(err, team) {
         if (err) {
             console.error('ERROR: '+err);
