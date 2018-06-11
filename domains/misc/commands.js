@@ -153,7 +153,7 @@ controller.hears(['^who is (.*)','^qui est (.*)'], 'direct_message,direct_mentio
     });
 });
 
-controller.hears(['^call (.*) (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^call (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
     var usernameNickname = message.match[1].replace('@','').replace('<','').replace('>','').trim();
     var username = usernameNickname.substring(0,usernameNickname.indexOf(' '))
     var nickname = usernameNickname.substring(usernameNickname.indexOf(' ')+1)
