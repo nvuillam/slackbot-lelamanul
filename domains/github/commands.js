@@ -27,7 +27,7 @@ function getGithubClient() {
 }
 
 // Search in github code 
-controller.hears(['^search code (.*)'], 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears(['^search code (.*)'], 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var key = message.match[1].trim();
     var client = getGithubClient();
