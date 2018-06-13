@@ -16,7 +16,7 @@ function getJiraClient() {
 }
 
 // check authentication to jiraa
-controller.hears('^jirame', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('^jirame', 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var jira = getJiraClient();
     jira.getCurrentUser().then(function (currJiraUser) {
@@ -29,7 +29,7 @@ controller.hears('^jirame', 'direct_message,mention,direct_mention', function (b
 });
 
 // Get current sprint info
-controller.hears('^current sprint', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('^current sprint', 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var jira = getJiraClient();
 
@@ -94,7 +94,7 @@ controller.hears('^current sprint', 'direct_message,mention,direct_mention', fun
 });
 
 // Get current sprint info
-controller.hears(['^issues (.*)','^issues of (.*)','^open issues of (.*)','^my issues','^my open issues'], 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears(['^issues (.*)','^issues of (.*)','^open issues of (.*)','^my issues','^my open issues'], 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var slackUserId = message.match[1]
     if (slackUserId == null || slackUserId === '')

@@ -33,7 +33,7 @@ MISC
 });
 
 // UPTIME
-controller.hears(['^uptime', '^identify yourself', '^who are you', '^what is your name'],'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^uptime', '^identify yourself', '^who are you', '^what is your name'],'ambient,direct_message,direct_mention,mention', function(bot, message) {
     bot.startTyping(message, function () {});
     var hostname = os.hostname();
     var uptime = formatUptime(process.uptime());
@@ -65,6 +65,6 @@ controller.on('bot_channel_join', function (bot, message) {
     bot.reply(message, "I'm here!")
 });
 
-controller.hears('youhou', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('youhou', 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.reply(message, '... houuu ... houuu .... houu ....');
 });

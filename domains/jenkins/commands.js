@@ -10,7 +10,7 @@ function getJenkinsClient() {
 }
 
 // Get current queue
-controller.hears('^queue', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('^queue', 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var jenkins = getJenkinsClient();
     jenkins.queue(function (err, data) {
@@ -21,7 +21,7 @@ controller.hears('^queue', 'direct_message,mention,direct_mention', function (bo
 });
 
 // List all jobs
-controller.hears('^jobs', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('^jobs', 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var jenkins = getJenkinsClient();
     jenkins.all_jobs_in_view(process.env.JENKINS_MAIN_VIEW, function (err, jobs) {
@@ -96,7 +96,7 @@ controller.hears('^jobs', 'direct_message,mention,direct_mention', function (bot
 });
 
 // Launch a new job build
-controller.hears(['^build (.*)'], 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears(['^build (.*)'], 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var jenkins = getJenkinsClient();
     var jobName = message.match[1]
@@ -105,7 +105,7 @@ controller.hears(['^build (.*)'], 'direct_message,mention,direct_mention', funct
 });
 
 // List running jobs
-controller.hears(['^running jobs', '^current builds'], 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears(['^running jobs', '^current builds'], 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var jenkins = getJenkinsClient();
     jenkins.all_jobs(function (err, jobs) {

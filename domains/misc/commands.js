@@ -1,4 +1,4 @@
-controller.hears(['^hello'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^hello','^bonjour'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
     bot.api.reactions.add({
         timestamp: message.ts,
         channel: message.channel,
@@ -19,7 +19,7 @@ controller.hears(['^hello'], 'direct_message,direct_mention,mention', function(b
     });
 });
 
-controller.hears(['^call me (.*)', '^my name is (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^call me (.*)', '^my name is (.*)'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
     bot.startTyping(message, function () {});
     var name = message.match[1];
     controller.storage.users.get(message.user, function(err, user) {
@@ -35,7 +35,7 @@ controller.hears(['^call me (.*)', '^my name is (.*)'], 'direct_message,direct_m
     });
 });
 
-controller.hears(['^what is my name', '^who am i'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^what is my name', '^who am i'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
     bot.startTyping(message, function () {});
     console.log('who is '+message.user)
     controller.storage.users.get(message.user, function(err, user) {
@@ -106,7 +106,7 @@ controller.hears(['^what is my name', '^who am i'], 'direct_message,direct_menti
 
 const tellMeTeamId = 'dxco4sf'
 
-controller.hears(['^tell (.*)','^tell me (.*)','^dis moi (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^tell me (.*)','^tell (.*)','^dis moi (.*)'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
     bot.startTyping(message, function () {});
     var key = message.match[1].trim();
     controller.storage.teams.get(tellMeTeamId, function(err, team) {
@@ -126,7 +126,7 @@ controller.hears(['^tell (.*)','^tell me (.*)','^dis moi (.*)'], 'direct_message
     });
 });
 
-controller.hears(['^learn (.*)','^remember (.*)','^apprends (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^learn (.*)','^remember (.*)','^apprends (.*)'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
     bot.startTyping(message, function () {});
     var keyVal = message.match[1];
     var key = keyVal.substring(0,keyVal.indexOf('='));
@@ -144,7 +144,7 @@ controller.hears(['^learn (.*)','^remember (.*)','^apprends (.*)'], 'direct_mess
     });
 });
 
-controller.hears(['^who is (.*)','^qui est (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^who is (.*)','^qui est (.*)'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
     bot.startTyping(message, function () {});
     var username = message.match[1].replace('?','').replace('@','').replace('<','').replace('>','').trim();
     console.log('who is '+username)
@@ -158,7 +158,7 @@ controller.hears(['^who is (.*)','^qui est (.*)'], 'direct_message,direct_mentio
     });
 });
 
-controller.hears(['^call (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['^call (.*)'], 'ambient,direct_message,direct_mention,mention', function(bot, message) {
     bot.startTyping(message, function () {});
     var usernameNickname = message.match[1].replace('@','').replace('<','').replace('>','').trim();
     var username = usernameNickname.substring(0,usernameNickname.indexOf(' '))
