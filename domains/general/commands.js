@@ -60,11 +60,3 @@ function formatUptime(uptime) {
     return uptime;
 }
 
-// MISC
-controller.on('bot_channel_join', function (bot, message) {
-    bot.reply(message, "I'm here!")
-});
-
-controller.hears('youhou', 'ambient,direct_message,mention,direct_mention', function (bot, message) {
-    bot.reply(message, '... houuu ... houuu .... houu ....');
-});

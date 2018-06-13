@@ -5,7 +5,10 @@ var http = require('http');
 var request = require('request');
 var Botkit = require('botkit');
 var fs = require('fs');
+var util = require('util');
 
+// Promosify methods
+const setTimeoutPromise = util.promisify(setTimeout);
 
 /**
  * Configure & Create bot
