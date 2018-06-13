@@ -1,8 +1,11 @@
-controller.hears(['^hello', '^bonjour'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
+controller.hears(['^hello', '^bonjour','^hi','^salut (.*)'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
+    if (message.bot_id && message.bot_id != null)
+        return 
+
     bot.api.reactions.add({
         timestamp: message.ts,
         channel: message.channel,
-        name: 'robot_face',
+        name: 'lelamanul',
     }, function (err, res) {
         if (err) {
             bot.botkit.log('Failed to add emoji reaction :(', err);
