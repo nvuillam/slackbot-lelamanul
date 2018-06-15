@@ -1,6 +1,9 @@
 // Load MISC commands
-// Github
-eval(fs.readFileSync('./domains/misc/quizz.js') + '')
+
+// QUIZZ if ACTIVATE_QUIZZ = TRUE
+if (process.env.ACTIVATE_QUIZZ === "TRUE") {
+    eval(fs.readFileSync('./domains/misc/quizz.js') + '')
+}
 
 // Base MISC commands
 controller.hears(['^hello', '^bonjour','^hi','^salut (.*)'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
