@@ -119,5 +119,5 @@ controller.on('dialog_submission', function handler(bot, message) {
 http.createServer(function(request, response) {
     response.writeHead(200, {'Content-Type': 'text/plain'});
     response.end('Ok, dyno is awake.');
-}).listen(5000);
+}).listen(process.env.PORT || 5000); 
 
