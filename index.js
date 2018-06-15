@@ -115,9 +115,10 @@ controller.on('dialog_submission', function handler(bot, message) {
     global[functionName](bot,message)    
 })
 
+/*
 // To keep Heroku's free dyno awake
 http.createServer(function(request, response) {
     response.writeHead(200, {'Content-Type': 'text/plain'});
     response.end('Ok, dyno is awake.');
-}).listen(process.env.PORT || 5000); 
+}).listen(process.env.PORT || 5000); */
 
