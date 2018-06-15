@@ -3,7 +3,7 @@
 var os = require('os');
 
 // HELP
-controller.hears('^help', 'direct_message,mention,direct_mention', function (bot, message) {
+controller.hears('^help', 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.startTyping(message, function () {});
     bot.reply(message, {
         text: `Commands for lelamanul
@@ -28,7 +28,8 @@ JIRA
 
 MISC
 - *tell me* _EXPRESSION_ : Retrieves value corresponding to expression
-- *learn* _EXPRESSION_=_VALUE_ : Stores value corresponding to expressiion
+- *learn* _EXPRESSION_=_VALUE_ : Stores value corresponding to expression
+- *start quizz* : Launch a quizz in the channel :)
 `});
 });
 

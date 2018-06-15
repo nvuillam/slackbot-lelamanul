@@ -1,14 +1,23 @@
 /**
  * Libraries
  */
-var http = require('http');
-var request = require('request');
-var Botkit = require('botkit');
-var fs = require('fs');
-var util = require('util');
+var http = require('http')
+var request = require('request')
+var Botkit = require('botkit')
+var fs = require('fs')
+var util = require('util')
+var dateFormat = require('dateformat')
+const Entities = require('html-entities').AllHtmlEntities;
+const htmlEntities = new Entities();
+var shuffleArray = require('shuffle-array')
 
 // Promosify methods
 const setTimeoutPromise = util.promisify(setTimeout);
+
+// Global methods
+const dateFormatBot = function(dt) {
+    return dateFormat(dt,'dd/mm/yyyy hh:MM')
+}
 
 /**
  * Configure & Create bot
@@ -97,7 +106,7 @@ controller.on('interactive_message_callback', function(bot, message) {
     var domain = callbackId.substring(0,callbackId.indexOf(':'))
     var method = callbackId.substring(callbackId.indexOf(':')+1)
     var functionName = 'interactive_'+domain+'_'+method ;
-    console.log('INTERACTIVE RECEPTION: '+functionName)
+    console.log('INTERACTIVE RECEPTION: '+functionName+'\n'+JSON.stringify(message,null,2))
     global[functionName](bot,message) 
 });
 

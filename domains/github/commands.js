@@ -88,6 +88,16 @@ controller.hears('^pull requests', 'ambient,direct_message,mention,direct_mentio
                         title: "Status",
                         value: pullRequest.state,
                         short: true
+                    },
+                    {
+                        title: "Created date",
+                        value: dateFormatBot(pullRequest.created_at),
+                        short: true
+                    },
+                    {
+                        title: "Last update date",
+                        value: dateFormatBot(pullRequest.updated_at),
+                        short: true
                     }
                 ]
             };

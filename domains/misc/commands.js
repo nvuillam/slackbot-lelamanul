@@ -1,3 +1,8 @@
+// Load MISC commands
+// Github
+eval(fs.readFileSync('./domains/misc/quizz.js') + '')
+
+// Base MISC commands
 controller.hears(['^hello', '^bonjour','^hi','^salut (.*)'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
     if (message.bot_id && message.bot_id != null)
         return 
@@ -207,3 +212,5 @@ function sayHiToUser(bot, message) {
         });
     });
 }
+
+

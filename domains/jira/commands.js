@@ -94,7 +94,7 @@ controller.hears('^current sprint', 'ambient,direct_message,mention,direct_menti
 });
 
 // Get current sprint info
-controller.hears(['^issues (.*)','^issues of (.*)','^open issues of (.*)','^my issues','^my open issues'], 'ambient,direct_message,mention,direct_mention', function (bot, message) {
+controller.hears(['^issues of (.*)','^issues (.*)','^open issues of (.*)','^my issues','^my open issues'], 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var slackUserId = message.match[1]
     if (slackUserId == null || slackUserId === '')
