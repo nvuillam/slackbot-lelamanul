@@ -37,7 +37,7 @@ controller.hears(['^call me (.*)', '^my name is (.*)'], 'ambient,direct_message,
     });
 });
 
-controller.hears(['^what is my name', '^who am i'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
+controller.hears(['^what is my name', '^who am i','^say my name'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
     bot.startTyping(message, function () { });
     console.log('who is ' + message.user)
     controller.storage.users.get(message.user, function (err, user) {

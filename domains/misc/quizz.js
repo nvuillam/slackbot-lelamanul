@@ -24,7 +24,7 @@ var currentQuizzSessions = {}
 controller.hears(['^start quizz', '^start quizz (.*)'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
 
     if (currentQuizzSessions[message.channel] != null) {
-        bot.reply(message, 'There is already a current quizz !\nSay *quizz stop* to stop it');
+        bot.reply(message, 'There is already a current quizz !\nSay *stop quizz* to stop it');
         return
     }
 
@@ -55,12 +55,15 @@ controller.hears(['^start quizz', '^start quizz (.*)'], 'ambient,direct_message,
 
 // User requests a quizz
 controller.hears(['^stop quizz'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
-    if (currentQuizzSessions[message.channel] != null && message.user == currentQuizzSessions[message.channel].starterUser) {
+    if (currentQuizzSessions[message.channel] != null && message.user === currentQuizzSessions[message.channel].starterUser) {
         bot.reply(message, { text: 'Omar a tuer le quizz' });
         delete currentQuizzSessions[message.channel]
     }
-    else {
+    else if(currentQuizzSessions[message.channel] != null) {
         bot.reply(message, { text: '<@'+currentQuizzSessions[message.channel].starterUser+'> started the quizz, only him/her can stop it' });
+    }   
+    else {
+        bot.reply(message, { text: 'There is no current quizz, dummy !' });
     }
 })
 

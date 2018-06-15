@@ -50,7 +50,7 @@ controller.configureSlackApp(
     { 
         clientId: process.env.CLIENT_ID,
         clientSecret: process.env.CLIENT_SECRET, 
-        scopes: ['bot']
+        scopes: ['bot','channels:write']
     } 
 ); 
 

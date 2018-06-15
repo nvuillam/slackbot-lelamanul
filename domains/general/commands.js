@@ -44,6 +44,15 @@ controller.hears(['^uptime', '^identify yourself', '^who are you', '^what is you
 
 });
 
+// LEAVE
+controller.hears(['^leave'],'direct_mention', function(bot, message) {
+    bot.startTyping(message, function () {});
+    bot.reply(message,'C\'est vraiment trop injuste :sad: ');
+    bot.api.channels.leave({channel: message.channel},function(err,response) {
+        console.log('Left channel '+message.channel)
+    })
+});
+
 function formatUptime(uptime) {
     var unit = 'second';
     if (uptime > 60) {
