@@ -53,6 +53,11 @@ controller.hears(['^leave'],'direct_mention', function(bot, message) {
     })
 });
 
+controller.hears(['^whisper (.*)'], 'ambient,direct_message,direct_mention,mention', function (bot, message) { 
+    var text = message.match[1]; 
+    bot.whisper(message,{ text: text}) 
+}); 
+
 function formatUptime(uptime) {
     var unit = 'second';
     if (uptime > 60) {
