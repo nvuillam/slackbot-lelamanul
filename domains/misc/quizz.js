@@ -15,7 +15,7 @@ const MAX_UNANSWERED_QUESTIONS_BEFORE_STOP = 5
 const EMOJI_ANSWER_SELECTED = ' :lock:'
 const EMOJI_ANSWER_OK = ' :heavy_check_mark:'
 const EMOJI_ANSWER_KO = ' :x:'
-const DEFAULT_ANSWER_NUMBER_FOR_WIN = 3 //5
+const DEFAULT_ANSWER_NUMBER_FOR_WIN = 5
 
 // Variables
 var currentQuizzSessions = {}
@@ -351,7 +351,7 @@ function displayCurrentQuizzScores(bot, message) {
         playingUsersWithScore.push([currentQuizzSessions[message.channel].scores[usr], usr])
     })
     playingUsersWithScore.sort(function (a, b) {
-        return a[0] > b[0] ? 1 : -1;
+        return a[0] < b[0] ? 1 : -1;
     });
 
     var sortedScoresStr = ''
