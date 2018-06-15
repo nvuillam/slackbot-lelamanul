@@ -22,7 +22,6 @@ var currentQuizzSessions = {}
 
 // User requests a quizz
 controller.hears(['^start quizz', '^start quizz (.*)'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
-    bot.startTyping(message, function () { });
 
     if (currentQuizzSessions[message.channel] != null) {
         bot.reply(message, 'There is already a current quizz !\nSay *quizz stop* to stop it');
@@ -69,7 +68,13 @@ controller.hears(['^stop quizz'], 'ambient,direct_message,direct_mention,mention
 
 // handle question answer
 global.interactive_quizz_question = function interactive_quizz_question(bot, message) {
-    console.log('-- Received reply')
+    if (currentQuizzSessions[message.channel] == null) {
+        console.log('There is no current quizz')
+        bot.whisper(message, 'Let go, the quizz has ended !')
+        return 
+    }
+
+
     currentQuizzSessions[message.channel].currentInteractiveMessage = message
 
     // Add player in player list of not registered yet
@@ -194,7 +199,6 @@ global.interactive_quizz_question = function interactive_quizz_question(bot, mes
             origMsgAttch.color = ATTACHMENT_COLOR_QUESTION_INCORRECT
             bot.replyInteractive(message, { text: message.original_message.text, attachments: [origMsgAttch] });
 
-            bot.startTyping(message, function () { });
             displayCurrentQuizzScores(bot, message)
             setTimeoutPromise(TIME_BETWEEN_QUESTIONS_MS).then((value8) => {
                 requestNextQuizzQuestion(bot, message)
@@ -212,7 +216,6 @@ global.interactive_quizz_question = function interactive_quizz_question(bot, mes
 
 // Ask a quizz question
 function requestNextQuizzQuestion(bot, message) {
-    bot.startTyping(message, function () { });
 
     var isFinished = checkGameFinished(bot, message)
     if (isFinished)
