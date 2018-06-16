@@ -10,6 +10,7 @@ var dateFormat = require('dateformat')
 const Entities = require('html-entities').AllHtmlEntities;
 const htmlEntities = new Entities();
 var shuffleArray = require('shuffle-array')
+var stringSimilarity = require('string-similarity'); 
 
 // Promosify methods
 const setTimeoutPromise = util.promisify(setTimeout);
