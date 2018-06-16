@@ -78,7 +78,7 @@ controller.hears(['^start quizz', '^start quizz (.*)', '^start trivia'], 'ambien
 });
 
 // User requests a quizz
-controller.hears(['^stop quizz'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
+controller.hears(['^stop quizz','^stop trivia'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
     if (currentQuizzSessions[message.channel] != null && message.user === currentQuizzSessions[message.channel].starterUser) {
         bot.reply(message, { text: 'Omar a tuer le quizz' });
         delete currentQuizzSessions[message.channel]
@@ -180,6 +180,7 @@ function requestNextTriviaQuestion(bot, message) {
         }
         bot.reply(message, qstnMessage);
         message.original_message = qstnMessage
+
         setQuestionTimeout(bot, message, JSON.parse(JSON.stringify(currentQuizzSessions[message.channel].currentQuestion)));
     });
 }
@@ -455,7 +456,7 @@ function checkBuzzerValidity(bot, message) {
 
     if (currentQuizzSessions[message.channel] == null) {
         console.log('There is no current quizz')
-        whisperWithToken(bot,message,{text: 'Let go dude, the quizz has ended !'})
+        bot.whisper(message,{text: 'Let go dude, the quizz has ended !'})
         isBuzzerValid = false
     }
 
@@ -465,9 +466,9 @@ function checkBuzzerValidity(bot, message) {
     var origMsgAttch = message.original_message.attachments[0]
 
     // Prevent past question to be clicked
-    if (isBuzzerValid && origMsgAttch.title !== htmlEntities.decode(currentQuizzSessions[message.channel].currentQuestion.question)) {
-        console.log('This click is not for the current question :\nClick: ' + origMsgAttch.title + '\n' + 'Current: ' + htmlEntities.decode(currentQuizzSessions[message.channel].currentQuestion.question))
-        whisperWithToken(bot,message,{text: 'This is not the current question. Don\'t you have nother better to do ? :unamused:'})
+    if (isBuzzerValid && htmlEntities.decode(origMsgAttch.title) !== htmlEntities.decode(currentQuizzSessions[message.channel].currentQuestion.question)) {
+        console.log('This click is not for the current question :\nClick: ' + htmlEntities.decode(origMsgAttch.title) + '\n' + 'Current: ' + htmlEntities.decode(currentQuizzSessions[message.channel].currentQuestion.question))
+        bot.whisper(message,{text: 'This is not the current question. Don\'t you have nother better to do ? :unamused:'})
         isBuzzerValid = false
     }
 
@@ -475,21 +476,21 @@ function checkBuzzerValidity(bot, message) {
     var slctdValue = message.actions[0].value
     if (isBuzzerValid && slctdValue === 'unavailable') {
         console.log('Answered already clicked, and incorrect')
-        whisperWithToken(bot,message,{text: 'You can not select an answer which you know is already wrong, get a brain :unamused:'})
+        bot.whisper(message,{text: 'You can not select an answer which you know is already wrong, get a brain :unamused:'})
         isBuzzerValid = false
     }
 
     // Prevent past question to be clicked
     if (isBuzzerValid && currentQuizzSessions[message.channel].currentQuestion.excludedUsers.includes(message.user)) {
         console.log('This user is excluded, can not answer before next question ^^')
-        whisperWithToken(bot,message,{text: 'You already FAILED :hammer: . Wait quietly for the next question ! :new_moon_with_face: '})
+        bot.whisper(message,{text: 'You already FAILED :hammer: . Wait quietly for the next question ! :new_moon_with_face: '})
         isBuzzerValid = false
     }
 
     // Process only one answer attempt at a time
     if (isBuzzerValid && currentQuizzSessions[message.channel].currentQuestion.processingAnswer === true) {
         console.log('There is already an answer being processed')
-        whisperWithToken(bot,message,{text: '<@' + currentQuizzSessions[message.channel].currentQuestion.processingAnswerUser + '> has been faster than you :joy:'})
+        bot.whisper(message,{text: '<@' + currentQuizzSessions[message.channel].currentQuestion.processingAnswerUser + '> has been faster than you :joy:'})
         isBuzzerValid = false
     }
 

@@ -68,15 +68,14 @@ controller.setupWebserver(process.env.PORT,function(err,webserver) {
     }); 
 }); 
 
-// Start bot listener
-
+// Initialize bot
 var bot = controller.spawn({
     token: process.env.token
 }).startRTM();
 
 // Handle events related to the websocket connection to Slack
 controller.on('rtm_open', function (bot) {
-    console.log('** The RTM api just connected!');
+    console.log(`** The RTM api just connected with token ${bot.config.token}!`);
 });
 
 controller.on('rtm_close', function (bot) {
@@ -127,13 +126,3 @@ http.createServer(function(request, response) {
     response.end('Ok, dyno is awake.');
 }).listen(5000);
 
-// Reusable functions
-
-// Whisper with token ( avoids some bad token to be sent by botkit bug)
-global.whisperWithToken= function whisperWithToken(bot,triggerMsg,messageToSend) {
-    triggerMsg.token = process.env.token
-    if (typeof messageToSend === "string") 
-        messageToSend = {text: messageToSend}
-    messageToSend.token = process.env.token
-    bot.whisper(triggerMsg,messageToSend)
-}
