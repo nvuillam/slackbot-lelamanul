@@ -38,12 +38,12 @@ if (!process.env.MONGOLAB_URI) {
 var mongoStorage = require('botkit-storage-mongo')({ mongoUri: process.env.MONGOLAB_URI })
 config = {
     storage: mongoStorage,
+    token: process.env.token,
     port: process.env.PORT,
     interactive_replies: true,
     debug: true
 };
 console.log('Mongolab storage')
-
 
 var controller = Botkit.slackbot(config);
 
@@ -127,3 +127,13 @@ http.createServer(function(request, response) {
     response.end('Ok, dyno is awake.');
 }).listen(5000);
 
+// Reusable functions
+
+// Whisper with token ( avoids some bad token to be sent by botkit bug)
+global.whisperWithToken= function whisperWithToken(bot,triggerMsg,messageToSend) {
+    triggerMsg.token = process.env.token
+    if (typeof messageToSend === "string") 
+        messageToSend = {text: messageToSend}
+    messageToSend.token = process.env.token
+    bot.whisper(triggerMsg,messageToSend)
+}

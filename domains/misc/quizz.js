@@ -98,13 +98,14 @@ controller.hears(['^stop quizz'], 'ambient,direct_message,direct_mention,mention
 // Handle buzzer click
 global.interactive_quizz_buzzer = function interactive_quizz_buzzer(bot, message) {
     if (checkBuzzerValidity(bot, message)) {
-        lockQuestionForUser(bot, message)
+        currentQuizzSessions[message.channel].currentQuestion.processingAnswer = true // Lock question before replying msg
         var dialog = bot.createDialog(
             'Buzzer',
             'quizz:buzzer_response',
             'Submit'
         ).addText('Answer', 'answer_text', '')
         bot.replyWithDialog(message, dialog.asObject());
+        lockQuestionForUser(bot, message)
     }
 }
 
@@ -174,7 +175,7 @@ function requestNextTriviaQuestion(bot, message) {
         }
 
         var qstnMessage = {
-            text: '_' + body[0].category.title + '_',
+            text: '_Category: ' + body[0].category.title + '_',
             attachments: [attachment]
         }
         bot.reply(message, qstnMessage);
@@ -233,7 +234,7 @@ function requestNextQuizzQuestion(bot, message) {
         }
 
         var qstnMessage = {
-            text: '_' + htmlEntities.decode(body.results[0].category) + '_',
+            text: '_Category: ' + htmlEntities.decode(body.results[0].category) + '_',
             attachments: [attachment]
         }
         bot.reply(message, qstnMessage);
@@ -309,6 +310,7 @@ function handleQuizzResponse(bot, message) {
         else {
             stillAllowReplies = manageTextChoiceAnswerValidity(bot, message)
         }
+        console.log('Users can still answer: '+stillAllowReplies)
 
         // Unlock question
         currentQuizzSessions[message.channel].currentQuestion.processingAnswer = false
@@ -358,13 +360,13 @@ function manageTextChoiceAnswerValidity(bot, message) {
     var similarity = stringSimilarity.compareTwoStrings(answerTextToFind, answerTextUser); 
     var replyUserText
     if (similarity >= COMPARE_STRING_SIMILARITY_VALIDITY) {
-        replyUserText = '<@' + message.user + '> was *right* with ' + answerTextUser + ':sunglasses:'
+        replyUserText = '<@' + message.user + '> was *right* with *' + answerTextUser + '* :sunglasses:'
         origMsgAttch.color = ATTACHMENT_COLOR_QUESTION_CORRECT
         currentQuizzSessions[message.channel].currentQuestion.answerFound = true
         addPointsToUser(message, message.user,currentQuizzSessions[message.channel].currentQuestion.value)
     }
     else {
-        replyUserText = '<@' + message.user + '> was *wrong* with ' + answerTextUser + ':poop:'
+        replyUserText = '<@' + message.user + '> was *wrong* with *' + answerTextUser + '* :poop:'
         // Decrement number of available answers
         currentQuizzSessions[message.channel].currentQuestion.remainingAnswersNumber = currentQuizzSessions[message.channel].currentQuestion.remainingAnswersNumber - 1
         console.log('Remaining solutions: ' + currentQuizzSessions[message.channel].currentQuestion.remainingAnswersNumber)
@@ -453,7 +455,7 @@ function checkBuzzerValidity(bot, message) {
 
     if (currentQuizzSessions[message.channel] == null) {
         console.log('There is no current quizz')
-        bot.whisper(message, 'Let go dude, the quizz has ended !')
+        whisperWithToken(bot,message,{text: 'Let go dude, the quizz has ended !'})
         isBuzzerValid = false
     }
 
@@ -465,7 +467,7 @@ function checkBuzzerValidity(bot, message) {
     // Prevent past question to be clicked
     if (isBuzzerValid && origMsgAttch.title !== htmlEntities.decode(currentQuizzSessions[message.channel].currentQuestion.question)) {
         console.log('This click is not for the current question :\nClick: ' + origMsgAttch.title + '\n' + 'Current: ' + htmlEntities.decode(currentQuizzSessions[message.channel].currentQuestion.question))
-        bot.whisper(message, 'This is not the current question. Don\'t you have nother better to do ? :unamused:')
+        whisperWithToken(bot,message,{text: 'This is not the current question. Don\'t you have nother better to do ? :unamused:'})
         isBuzzerValid = false
     }
 
@@ -473,21 +475,21 @@ function checkBuzzerValidity(bot, message) {
     var slctdValue = message.actions[0].value
     if (isBuzzerValid && slctdValue === 'unavailable') {
         console.log('Answered already clicked, and incorrect')
-        bot.whisper(message, 'You can not select an answer which you know is already wrong, get a brain :unamused:')
+        whisperWithToken(bot,message,{text: 'You can not select an answer which you know is already wrong, get a brain :unamused:'})
         isBuzzerValid = false
     }
 
     // Prevent past question to be clicked
     if (isBuzzerValid && currentQuizzSessions[message.channel].currentQuestion.excludedUsers.includes(message.user)) {
         console.log('This user is excluded, can not answer before next question ^^')
-        bot.whisper(message, 'You already FAILED :hammer: . Wait quietly for the next question ! :new_moon_with_face: ')
+        whisperWithToken(bot,message,{text: 'You already FAILED :hammer: . Wait quietly for the next question ! :new_moon_with_face: '})
         isBuzzerValid = false
     }
 
     // Process only one answer attempt at a time
     if (isBuzzerValid && currentQuizzSessions[message.channel].currentQuestion.processingAnswer === true) {
         console.log('There is already an answer being processed')
-        bot.whisper(message, '<@' + currentQuizzSessions[message.channel].currentQuestion.processingAnswerUser + '> has been faster than you :joy:')
+        whisperWithToken(bot,message,{text: '<@' + currentQuizzSessions[message.channel].currentQuestion.processingAnswerUser + '> has been faster than you :joy:'})
         isBuzzerValid = false
     }
 
@@ -591,3 +593,4 @@ function addUserQuizzWin(bot, message, userId) {
         });
     });
 }
+
