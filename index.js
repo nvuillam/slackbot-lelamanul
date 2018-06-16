@@ -110,6 +110,16 @@ controller.on('interactive_message_callback', function(bot, message) {
     global[functionName](bot,message) 
 });
 
+// Dialog submissions: redirect to global method built from callbackId 
+controller.on('dialog_submission', function handler(bot, message) { 
+    var callbackId = message.callback_id; 
+    var domain = callbackId.substring(0,callbackId.indexOf(':')) 
+    var method = callbackId.substring(callbackId.indexOf(':')+1) 
+    var functionName = 'dialog_'+domain+'_'+method ; 
+    console.log('DIALOG SUBMISSION: '+functionName+'\n'+JSON.stringify(message,null,2)) 
+    global[functionName](bot,message)     
+}) 
+
 // To keep Heroku's free dyno awake
 http.createServer(function(request, response) {
     response.writeHead(200, {'Content-Type': 'text/plain'});
