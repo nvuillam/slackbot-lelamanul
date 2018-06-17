@@ -1,4 +1,4 @@
-# Le lama NUL slackbot
+# Le lama NUL SlackBot
 
 This botkit-based slackbot allows your team to use a slack instance as a single entry point to various useful tools
 
