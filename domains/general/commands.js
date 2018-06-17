@@ -26,11 +26,11 @@ JIRA
 - *issues of* _@USER_ : List open issues of a user
 - *my issues*  : List your open issues
 
-ABSENCES / VACATIONS / SICK LEAVE
-- *absences* _(optional) @USER_ : List current and future absences 
-- *past absences* _(optional) @USER_ : Display past absences 
-- *my absences* : List current and future absences 
-- *my past absences* : Display past absences
+ABSENCES / VACATIONS / SICK LEAVE (use private messages for actions)
+- *absences* _(optional) @USER_ : List current and future absences for a user or the whole team 
+- *past absences* _(optional) @USER_ : Display past absences for a user or the whole team
+- *my absences* : List your current and future absences 
+- *my past absences* : List your past absences
 - *add absences validator* _@USER_ : Adds an absence validator
 - *remove absences validator* _@USER_ : Removes an absence validator
 

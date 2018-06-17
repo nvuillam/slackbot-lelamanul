@@ -1,6 +1,6 @@
 {
   "name": "slackbot-lelamanul",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Mouwouuuuuuu",
   "main": "index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "bot"
   ],
   "author": "Nicolas Vuillamy",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later", 
   "bugs": {
     "url": "https://github.com/nvuillam/slackbot-lelamanul.git/issues"
   },

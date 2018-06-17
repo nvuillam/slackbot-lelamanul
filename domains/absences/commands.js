@@ -25,9 +25,6 @@ const COLOR_ABSENCE_ATTACHMENT_MENU = '#1c1b17'
 const ABSENCE_MOMENT_DATE_DISPLAY = "dddd D MMMM"
 const ABSENCE_MOMENT_DATE_INPUT_FORMAT = 'DD/MM/YYYY'
 
-const COLOR_ABSENCE_LIST_ALT1 = '#f2d6b0'
-const COLOR_ABSENCE_LIST_ALT2 = '#f4a4f0'
-
 // Variables
 var currentlyEditedAbsences = {}
 var validatorUsers = listValidators(null, null, {}) // Initialize at startup, then update when database is updated
@@ -152,7 +149,7 @@ global.interactive_absence_update = function interactive_absence_update(bot, mes
         if (checkUserIsValidator(bot, message, message.user, { angry: true })) {
             loadAbsenceFromDb(bot, message, function () {
                 currentlyEditedAbsences[message.user].status = 'Rejected'
-                currentlyEditedAbsences[message.user].validator_user = message.user               
+                currentlyEditedAbsences[message.user].validator_user = message.user
                 storeAbsence(bot, message)
             })
         }
@@ -168,7 +165,10 @@ global.dialog_absence_update = function dialog_absence_update(bot, message) {
         storeAbsence(bot, message)
     }
     else {
-        bot.dialogError()
+        bot.dialogError({
+            "name":"absence_input_error",
+            "error":"Input data is incorrect"
+            })
     }
 }
 
@@ -252,12 +252,23 @@ function updateEditedAbsenceVar(message) {
     absence.reason = message.submission.reason
     absence.reasonText = message.submission.reasonText
 
+    // Reset status to ask again for validation
+    if (['Accepted', 'Rejected'].includes(absence.status))
+        absence.status = 'Awaiting validation'
+
     currentlyEditedAbsences[message.user] = absence
 }
 
 // Check if absence data is valid
 function checkAbsenceValidity(bot, message) {
-    return true
+    var absence = currentlyEditedAbsences[message.user]
+    var result = true
+    var momentStart = momentAbsences(absence.start_date)
+    var momentEnd = momentAbsences(absence.end_date)
+    // Time
+    if (momentStart.isAfter(momentEnd))
+        result = false
+    return result
 }
 
 // Store absence in database
@@ -273,13 +284,35 @@ function storeAbsence(bot, message) {
                 bot.reply(message, 'Error: absence not stored :crocodile:');
             }
             else {
-                var newAbsAttchmnt = getAbsenceAttachment(message, absence)
-                newAbsAttchmnt.color = 'good'
+                var absAttchmnt = getAbsenceAttachment(message, absence)
+                bot.reply(message, { text: 'Absence stored :hamster:', attachments: [absAttchmnt] });
+                manageAbsenceNotification(bot, message, absence)
                 currentlyEditedAbsences[message.user] = null
-                bot.reply(message, { text: 'Absence stored :hamster:', attachments: [newAbsAttchmnt] });
             }
         });
     });
+}
+
+function manageAbsenceNotification(bot, message, absence) {
+    message.type = 'direct_message'
+    var absAttchmnt = getAbsenceAttachment(message, absence)
+    // Notify requester
+    if (absence.validator_user != null && absence.user !== message.user ) {
+        var requesterText = '<@' + absence.validator_user + '> updated your absence request'
+        sendPrivateMessage(bot, absence.user, { text: requesterText, attachments: [absAttchmnt] })
+    }
+    // Notify validator of an update
+    if (absence.validator_user != null && absence.validator_user !== message.user) {
+        var validatorText = '<@' + absence.user + '> updated his absence request'
+        sendPrivateMessage(bot, absence.validator_user, { text: validatorText, attachments: [absAttchmnt] })
+    }
+    // Notify all absence validators that there are new requests to validate
+    if (absence.validator_user == null) {
+        var validationRqstdText = 'There is a new absence request to validate for <@' + absence.user + '> '
+        validatorUsers[ABSENCES_TEAM_ID].forEach(validatorUser => {
+            sendPrivateMessage(bot, validatorUser, { text: validationRqstdText, attachments: [absAttchmnt] })
+        })
+    }
 }
 
 // List absences
@@ -292,6 +325,7 @@ function listAbsences(bot, message, params, cb) {
             team.absences = {}
 
         // List absences to display
+        var isCurrentUserValidator = checkUserIsValidator(bot,message,message.user)
         var absencesToDisplay = []
         Object.keys(team.absences).forEach(absenceId => {
             var absence = team.absences[absenceId]
@@ -301,7 +335,7 @@ function listAbsences(bot, message, params, cb) {
                 toAdd = false
             }
             // Filter by time frame
-            if (params.timeframes != null) {
+            if (toAdd === true && params.timeframes != null) {
                 var momentToday = momentAbsences(new Date())
                 var momentStart = momentAbsences(absence.start_date)
                 var momentEnd = momentAbsences(absence.end_date)
@@ -316,6 +350,14 @@ function listAbsences(bot, message, params, cb) {
                 if (!params.timeframes.includes(absenceTimeframe))
                     toAdd = false
 
+            }
+            // Filter Rejected and cancelled if not current user request, or if user is not validator 
+            if (toAdd === true && 
+                isCurrentUserValidator === false &&
+                ['Cancelled','Rejected'].includes(absence.status) &&
+                absence.user !== message.user 
+              ) {
+                toAdd = false
             }
             if (toAdd === true) {
                 absencesToDisplay.push(team.absences[absenceId])
@@ -336,7 +378,6 @@ function listAbsences(bot, message, params, cb) {
         var bool = false
         absencesToDisplay.forEach(absence => {
             var attch = getAbsenceAttachment(message, absence, params)
-            attch.color = (absence.status === 'Cancelled') ? 'danger' : (bool) ? COLOR_ABSENCE_LIST_ALT1 : COLOR_ABSENCE_LIST_ALT2
             attachments.push(attch);
             bool = !bool
         });
@@ -360,8 +401,6 @@ function listAbsences(bot, message, params, cb) {
     })
 }
 
-
-
 function getAbsenceAttachment(message, absence, params = {}) {
     var momentToday = momentAbsences(new Date())
     var momentStart = momentAbsences(absence.start_date)
@@ -382,8 +421,8 @@ function getAbsenceAttachment(message, absence, params = {}) {
     else
         text += ' in vacation'
     // Status
-    if (['Accepted','Rejected'].includes(absence.status))
-        text += ' (*' + absence.status + '* by <@'+absence.validator_user+'>)'
+    if (['Accepted', 'Rejected'].includes(absence.status))
+        text += ' (*' + absence.status + '* by <@' + absence.validator_user + '>)'
     else
         text += ' (*' + absence.status + '*)'
 
@@ -394,10 +433,23 @@ function getAbsenceAttachment(message, absence, params = {}) {
 
     var durationText = 'Duration: ' + momentAbsDuration.locale('fr').humanize()
 
+    // Color
+    var attchColor = 'default'
+    switch (absence.status) {
+        case 'Accepted': attchColor = 'good'; break;
+        case 'Cancelled': attchColor = 'default'; break;
+        case 'Awaiting validation': attchColor = 'warning'; break;
+        case 'Rejected': attchColor = 'danger'; break;
+    }
+
     // Actions
     var actions = []
 
-    if (params.allowUpdate && absence.status !== 'Cancelled') {
+    var isPrivateConversation = false
+    if (message.type === 'direct_message')
+        isPrivateConversation = true
+
+    if (isPrivateConversation && params.allowUpdate && absence.status !== 'Cancelled') {
         // Update
         actions.push({
             name: 'update',
@@ -408,7 +460,7 @@ function getAbsenceAttachment(message, absence, params = {}) {
         })
     }
 
-    if (params.allowCancel && absence.status !== 'Cancelled') {
+    if (isPrivateConversation && params.allowCancel && absence.status !== 'Cancelled') {
         // Update
         actions.push({
             name: 'cancel',
@@ -426,7 +478,7 @@ function getAbsenceAttachment(message, absence, params = {}) {
     }
 
     // Additional butttons for validators
-    if (checkUserIsValidator(bot, message, message.user)) {
+    if (isPrivateConversation && checkUserIsValidator(bot, message, message.user)) {
         if (['Awaiting validation', 'Rejected'].includes(absence.status)) {
             // Accept button
             actions.push({
@@ -466,6 +518,7 @@ function getAbsenceAttachment(message, absence, params = {}) {
         callback_id: 'absence:update',
         text: text,
         footer: durationText,
+        color: attchColor,
         actions: actions
     }
     return attachment
@@ -473,31 +526,38 @@ function getAbsenceAttachment(message, absence, params = {}) {
 
 // Set / Remove absence validator
 function manageAbsenceValidators(bot, message, user, addOrRemove) {
-    controller.storage.teams.get(ABSENCES_TEAM_ID, function (err, team) {
-        // Manage init if necessary
-        if (!team)
-            team = { id: ABSENCES_TEAM_ID, absences: {}, validator_users: [] }
-        if (team.validator_users == null)
-            team.validator_users = []
-        // Add 
-        if (addOrRemove === 'add') {
-            team.validator_users.push(user)
-            team.validator_users = arrayToolsAbsences.unique(team.validator_users)
-        } // Or remove
-        else if (addOrRemove === 'remove') {
-            team.validator_users = arrayToolsAbsences.without(team.validator_users, user)
+    checkUserIsAdmin(message.user, function (isAdmin){
+        if (isAdmin === false) {
+            bot.reply(message, {attachments: [{text:'<@'+message.user+'> , you must be team admin to do that :closed_lock_with_key:',color:'danger'}]});
+            return
         }
-        validatorUsers[ABSENCES_TEAM_ID] = team.validator_users
-        controller.storage.teams.save(team, function (err) {
-            if (err) {
-                console.log('Error while saving validators ' + err.toString())
-                bot.reply(message, 'Error :crocodile:');
+        controller.storage.teams.get(ABSENCES_TEAM_ID, function (err, team) {
+            // Manage init if necessary
+            if (!team)
+                team = { id: ABSENCES_TEAM_ID, absences: {}, validator_users: [] }
+            if (team.validator_users == null)
+                team.validator_users = []
+            // Add 
+            if (addOrRemove === 'add') {
+                team.validator_users.push(user)
+                team.validator_users = arrayToolsAbsences.unique(team.validator_users)
+            } // Or remove
+            else if (addOrRemove === 'remove') {
+                team.validator_users = arrayToolsAbsences.without(team.validator_users, user)
             }
-            else {
-                listValidators(bot, message, { forceRefresh: true, displayMessage: true })
-            }
+            validatorUsers[ABSENCES_TEAM_ID] = team.validator_users
+            controller.storage.teams.save(team, function (err) {
+                if (err) {
+                    console.log('Error while saving validators ' + err.toString())
+                    bot.reply(message, 'Error :crocodile:');
+                }
+                else {
+                    listValidators(bot, message, { forceRefresh: true, displayMessage: true })
+                }
+            });
         });
-    });
+    })
+
 }
 
 function listValidators(bot, message, params = {}) {
@@ -528,6 +588,19 @@ function listValidators(bot, message, params = {}) {
     }
 }
 
+// Check user is admin
+function checkUserIsAdmin(user, cb) {
+    bot.api.users.info({ user: user }, function (err, info) {
+        if (err)
+            console.log('Error while fetching user info: ' + err)
+        var isAdmin = false
+        console.log('User info: ' + JSON.stringify(info))
+        if (info != null && info.user != null && info.user.is_owner === true)
+            isAdmin = true
+        cb(isAdmin, info)
+    })
+}
+
 // Check user is validator
 function checkUserIsValidator(bot, message, user, params = {}) {
     var isValidator = false
@@ -556,4 +629,17 @@ function parseAbsDate(dateString) {
     var dateParts = dateString.split("/");
     var dateObject = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
     return dateObject
+}
+
+// Send private message
+function sendPrivateMessage(bot, user, messageToSend) {
+    bot.api.im.open({
+        user: user
+    }, (err, res) => {
+        if (err) {
+            bot.botkit.log('Failed to open IM with user', err)
+        }
+        messageToSend.channel = res.channel.id
+        bot.say(messageToSend);
+    })
 }
