@@ -74,10 +74,12 @@ Feel free to contribute :)
 
 - Create a new app on https://api.slack.com/
 
-  - Interactive components: https://myapp.herokuapp.com/slack/receive (can be done after next step)
+  - Interactive components: https://YOURAPPNAME.herokuapp.com/slack/receive (can be done after next step)
 
   - OAuth & Permissions
-  		- Callback URL: https://myapp.herokuapp.com/oauth (can be done after next step)
+  
+  		- Callback URL: https://YOURAPPNAME.herokuapp.com/oauth (can be done after next step) 
+      
   		- Permission scopes: channels:write , incoming-webhook , bot
  
  - Activate bot user
@@ -91,12 +93,12 @@ Feel free to contribute :)
 - Define the following environment variable in Heroku app
 
   - SLACK / BOTKIT / STORAGE
-    - **MY_HOST** : Your app current host (ex: https://myapp.herokuapp.com )
+    - **MY_HOST** : Your app current host (ex: https://YOURAPPNAME.herokuapp.com )
     - **token**: Slack bot token ( ex: dfh54dg56hf46ggh64fg56gh564fg46fh)
     - **CLIENT_ID** : Slack App client Id (ex: 424298597.3788425242061) 
     - **CLIENT_SECRET** : Slack App client secret (ex: 54575272754f2bb0468105513e60) 
     - **PORT** : Your bot port (ex: 8765)
-    - **MONGOLAB_URI** : URI of a mongo database (ex: mongodb://someuser:somepassword@ds2514520.mlab.com:55260/slackbot-lelamanul )
+    - **MONGOLAB_URI** : URI of a mongo database (ex: mongodb://someuser:somepassword@ds2514444.mlab.com:55260/slackbot-lelamanul )
       - You can use mlab.com free 500mb database if you do not have a mongodb database
 
   - GitHub
@@ -122,4 +124,4 @@ Feel free to contribute :)
 
 ### Add lelamanul to your slack workspace
 
-- Open https://myapp.herokuapp.com/login in a web browser
+- Open https://YOURAPPNAME.herokuapp.com/login in a web browser
