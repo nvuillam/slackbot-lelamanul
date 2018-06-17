@@ -80,7 +80,10 @@ controller.on('rtm_open', function (bot) {
 
 controller.on('rtm_close', function (bot) {
     console.log('** The RTM api just closed');
-    // you may want to attempt to re-open
+    // try to reopen socket
+    bot = controller.spawn({
+        token: process.env.token
+    }).startRTM();
 });
 
 ///// INCLUDES 
@@ -97,8 +100,12 @@ eval(fs.readFileSync('./domains/jenkins/commands.js') + '')
 // Jenkins
 eval(fs.readFileSync('./domains/jira/commands.js') + '')
 
+// Absences
+eval(fs.readFileSync('./domains/absences/commands.js') + '')
+
 // Miscellaneous
 eval(fs.readFileSync('./domains/misc/commands.js') + '')
+
 
 // Interactive messages callbacks
 controller.on('interactive_message_callback', function(bot, message) {

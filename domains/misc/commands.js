@@ -122,7 +122,7 @@ controller.hears(['^tell me (.*)', '^tell (.*)', '^dis moi (.*)'], 'ambient,dire
             bot.reply(message, team.tell_me_list[key]);
         }
         else if (team && team.tell_me_list && (key === 'everything' || key === 'tout')) {
-            bot.reply(message, 'Here\'s what i know: ' + Object.keys(team.tell_me_list));
+            bot.reply(message, 'Here\'s what i know: ' + Object.keys(team.tell_me_list).sort());
         }
         else {
             bot.reply(message, 'Sorry, I don\'t know ' + key + '\nTeach me by saying _learn ' + key + '=SOME_VALUE_');
