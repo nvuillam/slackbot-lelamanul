@@ -1,15 +1,15 @@
-# Le lama NUL slackbot
+# Le lama NUL SlackBot
 
 This botkit-based slackbot allows your team to use a slack instance as a single entry point to various useful tools
 
-- github
-- jenkins
-- jira
+- **GitHub**
+- **Jenkins**
+- **Jira**
 
 It contains also lots of functions ... some more useful than others !
 
-- Vacations / Sick leave tracking : use the bot to request vacations, and authorized members can validate or reject them
-- Games for coffee breaks: Quizz and Trivia ( If you are a nazi, you can of course deactivate them )
+- **Vacations** / Sick leave tracking : use the bot to request vacations, and authorized members can validate or reject them
+- **Games** for coffee breaks: **Quizz** and **Trivia** ( If you are a nazi, you can of course deactivate them )
 
 Feel free to contribute :)
 
@@ -74,10 +74,12 @@ Feel free to contribute :)
 
 - Create a new app on https://api.slack.com/
 
-  - Interactive components: https://myapp.herokuapp.com/slack/receive (can be done after next step)
+  - Interactive components: https://YOURAPPNAME.herokuapp.com/slack/receive (can be done after next step)
 
   - OAuth & Permissions
-  		- Callback URL: https://myapp.herokuapp.com/oauth (can be done after next step)
+  
+  		- Callback URL: https://YOURAPPNAME.herokuapp.com/oauth (can be done after next step) 
+      
   		- Permission scopes: channels:write , incoming-webhook , bot
  
  - Activate bot user
@@ -86,36 +88,40 @@ Feel free to contribute :)
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nvuillam/slackbot-lelamanul)
 
+- Free heroku dyno will be fine
+
 - Define the following environment variable in Heroku app
 
-  - **MY_HOST** : Your app current host (ex: https://myapp.herokuapp.com )
-  - **token**: Slack bot token ( ex: dfh54dg56hf46ggh64fg56gh564fg46fh)
-  - **CLIENT_ID** : Slack App client Id (ex: 424298597.3788425242061) 
-  - **CLIENT_SECRET** : Slack App client secret (ex: 54575272754f2bb0468105513e60) 
-  - **PORT** : Your bot port (ex: 8765)
-  
-  - **MONGOLAB_URI** : URI of mongo database (ex: mongodb://someuser:somepassword@ds2514520.mlab.com:55260/slackbot-lelamanul )
+  - SLACK / BOTKIT / STORAGE
+    - **MY_HOST** : Your app current host (ex: https://YOURAPPNAME.herokuapp.com )
+    - **token**: Slack bot token ( ex: dfh54dg56hf46ggh64fg56gh564fg46fh)
+    - **CLIENT_ID** : Slack App client Id (ex: 424298597.3788425242061) 
+    - **CLIENT_SECRET** : Slack App client secret (ex: 54575272754f2bb0468105513e60) 
+    - **PORT** : Your bot port (ex: 8765)
+    - **MONGOLAB_URI** : URI of a mongo database (ex: mongodb://someuser:somepassword@ds2514444.mlab.com:55260/slackbot-lelamanul )
+      - You can use mlab.com free 500mb database if you do not have a mongodb database
 
-  - **GIT_USERNAME** : Your github username ( ex: nvuillam )
-  - **GIT_PASSWORD** : Your github password or token ( ex: dfdgdhgh6d46fg4h6fgfg6 )
+  - GitHub
+    - **GIT_USERNAME** : Your github username ( ex: nvuillam )
+    - **GIT_PASSWORD** : Your github password or token ( ex: dfdgdhgh6d46fg4h6fgfg6 )
+    - **GIT_ORG** : Your main github organization  (ex: Omnichannel-for-Salesforce )
+    - **GIT_MAIN_REPO** : Your main github repository , containing source code. ( ex: DXCO4SF_Sources )
 
-  - **GIT_ORG** : Your main github organization  (ex: Omnichannel-for-Salesforce )
-  - **GIT_MAIN_REPO** : Your main github repository , containing source code. ( ex: DXCO4SF_Sources )
+  - Jenkins
+    - **JENKINS_HOST** : Your jenkins instance host ( ex: jenkins.mydomain.com:8080 )
+    - **JENKINS_USERNAME** : Your jenkins username (ex: nvuillam )
+    - **JENKINS_PASSWORD** : Your jenkins password or token ( ex: df46d4h6fg4h6fg4h6fg6 )
+    - **JENKINS_MAIN_VIEW** : Your Jenkins main view ( ex: DXC-OmniChannel-for-Salesforce )
 
-  - **JENKINS_HOST** : Your jenkins instance host ( ex: jenkins.mydomain.com:8080 )
-  - **JENKINS_USERNAME** : Your jenkins username (ex: nvuillam )
-  - **JENKINS_PASSWORD** : Your jenkins password or token ( ex: df46d4h6fg4h6fg4h6fg6 )
+  - Jira
+    - **JIRA_HOST** : Your JIRA instance host ( ex: jira.mydomain.com )
+    - **JIRA_USERNAME** : Your JIRA username ( ex: nvuillam )
+    - **JIRA_PASSWORD** : Your JIRA password or token ( ex: dffgdg5dfg5df5g5 )
+    - **JIRA_MAIN_PROJECT_NAME** : Your JIRA main project name ( ex: Cloud IRM )
 
-  - **JENKINS_MAIN_VIEW** : Your Jenkins main view ( ex: DXC-OmniChannel-for-Salesforce )
-
-  - **JIRA_HOST** : Your JIRA instance host ( ex: jira.mydomain.com )
-  - **JIRA_USERNAME** : Your JIRA username ( ex: nvuillam )
-  - **JIRA_PASSWORD** : Your JIRA password ( ex: dffgdg5dfg5df5g5 )
-
-  - **JIRA_MAIN_PROJECT_NAME** : Your JIRA main project name ( ex: Cloud IRM )
-
-  - **ACTIVATE QUIZZ** : Activate quizz & trivia commands
+  - Miscellaneous
+    - **ACTIVATE_QUIZZ** : Activate quizz & trivia commands
 
 ### Add lelamanul to your slack workspace
 
-- Open https://myapp.herokuapp.com/login in a web browser
+- Open https://YOURAPPNAME.herokuapp.com/login in a web browser
