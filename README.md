@@ -86,6 +86,8 @@ Feel free to contribute :)
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nvuillam/slackbot-lelamanul)
 
+- Free heroku dyno will be fine
+
 - Define the following environment variable in Heroku app
 
   - **MY_HOST** : Your app current host (ex: https://myapp.herokuapp.com )
@@ -94,7 +96,8 @@ Feel free to contribute :)
   - **CLIENT_SECRET** : Slack App client secret (ex: 54575272754f2bb0468105513e60) 
   - **PORT** : Your bot port (ex: 8765)
   
-  - **MONGOLAB_URI** : URI of mongo database (ex: mongodb://someuser:somepassword@ds2514520.mlab.com:55260/slackbot-lelamanul )
+  - **MONGOLAB_URI** : URI of a mongo database (ex: mongodb://someuser:somepassword@ds2514520.mlab.com:55260/slackbot-lelamanul )
+    - You can use mlab.com free 500mb database if you do not have a mongodb database
 
   - **GIT_USERNAME** : Your github username ( ex: nvuillam )
   - **GIT_PASSWORD** : Your github password or token ( ex: dfdgdhgh6d46fg4h6fgfg6 )
@@ -105,16 +108,14 @@ Feel free to contribute :)
   - **JENKINS_HOST** : Your jenkins instance host ( ex: jenkins.mydomain.com:8080 )
   - **JENKINS_USERNAME** : Your jenkins username (ex: nvuillam )
   - **JENKINS_PASSWORD** : Your jenkins password or token ( ex: df46d4h6fg4h6fg4h6fg6 )
-
   - **JENKINS_MAIN_VIEW** : Your Jenkins main view ( ex: DXC-OmniChannel-for-Salesforce )
 
   - **JIRA_HOST** : Your JIRA instance host ( ex: jira.mydomain.com )
   - **JIRA_USERNAME** : Your JIRA username ( ex: nvuillam )
-  - **JIRA_PASSWORD** : Your JIRA password ( ex: dffgdg5dfg5df5g5 )
-
+  - **JIRA_PASSWORD** : Your JIRA password or token ( ex: dffgdg5dfg5df5g5 )
   - **JIRA_MAIN_PROJECT_NAME** : Your JIRA main project name ( ex: Cloud IRM )
 
-  - **ACTIVATE QUIZZ** : Activate quizz & trivia commands
+  - **ACTIVATE_QUIZZ** : Activate quizz & trivia commands
 
 ### Add lelamanul to your slack workspace
 
