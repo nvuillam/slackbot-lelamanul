@@ -2,14 +2,14 @@
 
 This botkit-based slackbot allows your team to use a slack instance as a single entry point to various useful tools
 
-- github
-- jenkins
-- jira
+- **GitHub**
+- **Jenkins**
+- **Jira**
 
 It contains also lots of functions ... some more useful than others !
 
-- Vacations / Sick leave tracking : use the bot to request vacations, and authorized members can validate or reject them
-- Games for coffee breaks: Quizz and Trivia ( If you are a nazi, you can of course deactivate them )
+- **Vacations** / Sick leave tracking : use the bot to request vacations, and authorized members can validate or reject them
+- **Games** for coffee breaks: **Quizz** and **Trivia** ( If you are a nazi, you can of course deactivate them )
 
 Feel free to contribute :)
 
