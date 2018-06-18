@@ -685,7 +685,7 @@ function checkUpdateAbsenceAllowed(bot, message, user) {
 function mailAllAbsences(bot, message) {
     if (checkUserIsValidator(bot, message, message.user, { angry: true })) {
         listAbsences(bot, message, { timeframes: ['past', 'current', 'future'], order: 'asc' }, function (absences, absencesMessage) {
-            var userList = []
+            var userList = Array.from(validatorUsers[ABSENCES_TEAM_ID])
             absences.forEach(absence => {
                 userList.push(absence.user)
                 if (absence.validator_user != null)
