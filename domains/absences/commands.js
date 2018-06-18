@@ -689,7 +689,7 @@ function mailAllAbsences(bot, message) {
             absences.forEach(absence => {
                 userList.push(absence.user)
                 if (absence.validator_user != null)
-                    userList.push(absence.user)
+                    userList.push(absence.validator_user)
             })
             userList = arrayToolsAbsences.unique(userList)
             loadSlackUsersInfo(bot, userList, function () {
@@ -744,7 +744,7 @@ function loadSlackUsersInfo(bot, users, cb) {
                 bot.api.users.info({ user: user }, function (err, info) {
                     if (err)
                         bot.botkit.log('Error while fetching user info: ' + err)
-                    console.log('bot.api.user result: ' + JSON.stringify(info))
+                    bot.botkit.log('bot.api.user result: ' + JSON.stringify(info))
                     currentUserInfo[user] = info.user
                     resolve()
                 })
@@ -766,10 +766,10 @@ function getSlackUserInfo(user) {
 // Get user long name
 function getSlackUserFullName(user) {
     var userInfo = getSlackUserInfo(user)
-    if (userInfo != null)
+    if (userInfo != null && userInfo.real_name != null)
         return userInfo.real_name
     else {
-        bot.botkit.log('Error fetching user full name', userInfo)
+        console.error('Error fetching user full name for '+user+' : ' + userInfo)
     }
 }
 
@@ -778,7 +778,7 @@ function getSlackUserEmail(user) {
     if (userInfo != null && userInfo.profile != null && userInfo.profile.email != null)
         return userInfo.profile.email
     else {
-        bot.botkit.log('Error fetching user email', userInfo)
+        console.error('Error fetching user email for '+user+' : ' + userInfo)
     }
 }
 
@@ -805,7 +805,7 @@ function sendEmail(emailData) {
 
     transporterEmailAbsences.sendMail(mailOptions, function (error, info) {
         if (error) {
-            console.log(error);
+            console.log('Error sending mail ' + error);
         } else {
             console.log('ABSENCES: Email sent: ' + info.response);
         }
