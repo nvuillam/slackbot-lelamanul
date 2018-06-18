@@ -10,14 +10,14 @@ var dateFormat = require('dateformat')
 const Entities = require('html-entities').AllHtmlEntities;
 const htmlEntities = new Entities();
 var shuffleArray = require('shuffle-array')
-var stringSimilarity = require('string-similarity'); 
+var stringSimilarity = require('string-similarity');
 
 // Promosify methods
 const setTimeoutPromise = util.promisify(setTimeout);
 
 // Global methods
-const dateFormatBot = function(dt) {
-    return dateFormat(dt,'dd/mm/yyyy hh:MM')
+const dateFormatBot = function (dt) {
+    return dateFormat(dt, 'dd/mm/yyyy hh:MM')
 }
 
 /**
@@ -47,26 +47,34 @@ console.log('Mongolab storage')
 
 var controller = Botkit.slackbot(config);
 
-controller.configureSlackApp( 
-    { 
+controller.configureSlackApp(
+    {
         clientId: process.env.CLIENT_ID,
-        clientSecret: process.env.CLIENT_SECRET, 
-        scopes: ['bot','channels:write']
-    } 
-); 
+        clientSecret: process.env.CLIENT_SECRET,
+        scopes: [
+            'bot',
+            'channels:write',
+            'chat:write:bot',
+            'incoming-webhook',
+            'users:read',
+            'users:read.email',
+            'users.profile:read'
+        ]
+    }
+);
 
 // Set up WebServer for hooks and oAuth
-controller.setupWebserver(process.env.PORT,function(err,webserver) { 
-    controller.createWebhookEndpoints(controller.webserver); 
+controller.setupWebserver(process.env.PORT, function (err, webserver) {
+    controller.createWebhookEndpoints(controller.webserver);
 
-    controller.createOauthEndpoints(controller.webserver,function(err,req,res) { 
-        if (err) { 
-            res.status(500).send('ERROR: ' + err); 
-        } else { 
-            res.send('Success!'); 
-        } 
-    }); 
-}); 
+    controller.createOauthEndpoints(controller.webserver, function (err, req, res) {
+        if (err) {
+            res.status(500).send('ERROR: ' + err);
+        } else {
+            res.send('Success!');
+        }
+    });
+});
 
 // Initialize bot
 var bot = controller.spawn({
@@ -108,28 +116,28 @@ eval(fs.readFileSync('./domains/misc/commands.js') + '')
 
 
 // Interactive messages callbacks
-controller.on('interactive_message_callback', function(bot, message) {
+controller.on('interactive_message_callback', function (bot, message) {
     var callbackId = message.callback_id;
-    var domain = callbackId.substring(0,callbackId.indexOf(':'))
-    var method = callbackId.substring(callbackId.indexOf(':')+1)
-    var functionName = 'interactive_'+domain+'_'+method ;
-    console.log('INTERACTIVE RECEPTION: '+functionName+'\n'+JSON.stringify(message,null,2))
-    global[functionName](bot,message) 
+    var domain = callbackId.substring(0, callbackId.indexOf(':'))
+    var method = callbackId.substring(callbackId.indexOf(':') + 1)
+    var functionName = 'interactive_' + domain + '_' + method;
+    console.log('INTERACTIVE RECEPTION: ' + functionName + '\n' + JSON.stringify(message, null, 2))
+    global[functionName](bot, message)
 });
 
 // Dialog submissions: redirect to global method built from callbackId 
-controller.on('dialog_submission', function handler(bot, message) { 
-    var callbackId = message.callback_id; 
-    var domain = callbackId.substring(0,callbackId.indexOf(':')) 
-    var method = callbackId.substring(callbackId.indexOf(':')+1) 
-    var functionName = 'dialog_'+domain+'_'+method ; 
-    console.log('DIALOG SUBMISSION: '+functionName+'\n'+JSON.stringify(message,null,2)) 
-    global[functionName](bot,message)     
-}) 
+controller.on('dialog_submission', function handler(bot, message) {
+    var callbackId = message.callback_id;
+    var domain = callbackId.substring(0, callbackId.indexOf(':'))
+    var method = callbackId.substring(callbackId.indexOf(':') + 1)
+    var functionName = 'dialog_' + domain + '_' + method;
+    console.log('DIALOG SUBMISSION: ' + functionName + '\n' + JSON.stringify(message, null, 2))
+    global[functionName](bot, message)
+})
 
 // To keep Heroku's free dyno awake
-http.createServer(function(request, response) {
-    response.writeHead(200, {'Content-Type': 'text/plain'});
+http.createServer(function (request, response) {
+    response.writeHead(200, { 'Content-Type': 'text/plain' });
     response.end('Ok, dyno is awake.');
 }).listen(5000);
 
