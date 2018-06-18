@@ -6,6 +6,7 @@ const MY_ABSENCES_TRIGGER_WORDS = ['^my vacations', '^my absences', '^my out of 
 const MY_PAST_ABSENCES_TRIGGER_WORDS = ['^my past vacations', '^my past absences', '^my past out of office', '^mes vacances passées', '^mes congés passés'];
 const SET_ABSENCES_VALIDATOR_WORDS = ['^add vacations validator (.*)', '^set vacations validator (.*)', '^add absences validator (.*)', '^set absences validator (.*)']
 const REMOVE_ABSENCES_VALIDATOR_WORDS = ['^remove vacations validator (.*)', '^remove absences validator (.*)']
+const MAIL_ME_ALL_ABSENCES_WORDS = ['^mail me all absences', '^extract absences', '^extract absences']
 
 const ABSENCE_REASONS = [
     { label: 'Vacation', value: 'Vacation' },
@@ -25,14 +26,35 @@ const COLOR_ABSENCE_ATTACHMENT_MENU = '#1c1b17'
 const ABSENCE_MOMENT_DATE_DISPLAY = "dddd D MMMM"
 const ABSENCE_MOMENT_DATE_INPUT_FORMAT = 'DD/MM/YYYY'
 
+const ABSENCE_EMAIL_SUBJECT_PREFIX = process.env.ABSENCES_EMAIL_SUBJECT_PREFIX || 'Absences management: '
+
+const ABSENCES_SENDER_EMAIL_SERVICE = process.env.ABSENCES_SENDER_EMAIL_SERVICE
+const ABSENCES_SENDER_EMAIL_ADDRESS = process.env.ABSENCES_SENDER_EMAIL_ADDRESS
+const ABSENCES_SENDER_EMAIL_USERNAME = process.env.ABSENCES_SENDER_EMAIL_USERNAME || ABSENCES_SENDER_EMAIL_ADDRESS
+const ABSENCES_SENDER_EMAIL_PASSWORD = process.env.ABSENCES_SENDER_EMAIL_PASSWORD
+
 // Variables
 var currentlyEditedAbsences = {}
-var validatorUsers = listValidators(null, null, {}) // Initialize at startup, then update when database is updated
+var validatorUsers = null
+listValidators(null, null, {}) // Initialize at startup, then update when database is updated
+var currentUserInfo = {}
+
 
 // Libs
 var uuidv4Absences = require('uuid/v4');
 var momentAbsences = require('moment');
 var arrayToolsAbsences = require("array-tools");
+var nodemailerAbsences = require('nodemailer')
+
+// Init
+var transporterEmailAbsences = nodemailerAbsences.createTransport({
+    service: ABSENCES_SENDER_EMAIL_SERVICE,
+    tls: { rejectUnauthorized: false },
+    auth: {
+        user: ABSENCES_SENDER_EMAIL_USERNAME,
+        pass: ABSENCES_SENDER_EMAIL_PASSWORD
+    }
+});
 
 ////////////////////// Hears //////////////////
 
@@ -40,7 +62,7 @@ var arrayToolsAbsences = require("array-tools");
 controller.hears(ABSENCES_TRIGGER_WORDS, 'ambient,direct_message,direct_mention,mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var slackUserId = message.match[1]
-    if (slackUserId == null || slackUserId === '')
+    if (slackUserId == null || slackUserId === '' || slackUserId === 'all')
         slackUserId = null
     else
         slackUserId = message.match[1].replace('?', '').replace('@', '').replace('<', '').replace('>', '').trim()
@@ -54,7 +76,7 @@ controller.hears(ABSENCES_TRIGGER_WORDS, 'ambient,direct_message,direct_mention,
 controller.hears(PAST_ABSENCES_TRIGGER_WORDS, 'ambient,direct_message,direct_mention,mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var slackUserId = message.match[1]
-    if (slackUserId == null || slackUserId === '')
+    if (slackUserId == null || slackUserId === '' || slackUserId === 'all')
         slackUserId = message.user
     else
         slackUserId = message.match[1].replace('?', '').replace('@', '').replace('<', '').replace('>', '').trim()
@@ -98,6 +120,13 @@ controller.hears(REMOVE_ABSENCES_VALIDATOR_WORDS, 'ambient,direct_message,direct
     bot.startTyping(message, function () { });
     var slackUserId = message.match[1].replace('?', '').replace('@', '').replace('<', '').replace('>', '').trim()
     manageAbsenceValidators(bot, message, slackUserId, 'remove')
+});
+
+// Remove validator user
+controller.hears(MAIL_ME_ALL_ABSENCES_WORDS, 'ambient,direct_message,direct_mention,mention', function (bot, message) {
+    bot.startTyping(message, function () { });
+    mailAllAbsences(bot, message)
+
 });
 
 //////////////////////////////// Interactive functions ////////////////////
@@ -166,9 +195,9 @@ global.dialog_absence_update = function dialog_absence_update(bot, message) {
     }
     else {
         bot.dialogError({
-            "name":"absence_input_error",
-            "error":"Input data is incorrect"
-            })
+            "name": "absence_input_error",
+            "error": "Input data is incorrect"
+        })
     }
 }
 
@@ -199,6 +228,8 @@ function loadAbsenceFromDb(bot, message, cb) {
     console.log('Update absence request: reply dialog')
     var slctdAbsence = message.actions[0].value
     controller.storage.teams.get(ABSENCES_TEAM_ID, function (err, team) {
+        if (err)
+            console.log(err)
         currentlyEditedAbsences[message.user] = team.absences[slctdAbsence]
         if (cb)
             cb()
@@ -293,26 +324,50 @@ function storeAbsence(bot, message) {
     });
 }
 
+// Notifications
 function manageAbsenceNotification(bot, message, absence) {
-    message.type = 'direct_message'
-    var absAttchmnt = getAbsenceAttachment(message, absence)
-    // Notify requester
-    if (absence.validator_user != null && absence.user !== message.user ) {
-        var requesterText = '<@' + absence.validator_user + '> updated your absence request'
-        sendPrivateMessage(bot, absence.user, { text: requesterText, attachments: [absAttchmnt] })
-    }
-    // Notify validator of an update
-    if (absence.validator_user != null && absence.validator_user !== message.user) {
-        var validatorText = '<@' + absence.user + '> updated his absence request'
-        sendPrivateMessage(bot, absence.validator_user, { text: validatorText, attachments: [absAttchmnt] })
-    }
-    // Notify all absence validators that there are new requests to validate
-    if (absence.validator_user == null) {
-        var validationRqstdText = 'There is a new absence request to validate for <@' + absence.user + '> '
-        validatorUsers[ABSENCES_TEAM_ID].forEach(validatorUser => {
-            sendPrivateMessage(bot, validatorUser, { text: validationRqstdText, attachments: [absAttchmnt] })
-        })
-    }
+    var allUsers = Array.from(validatorUsers[ABSENCES_TEAM_ID])
+    allUsers.push(absence.user)
+    if (absence.validator_user != null)
+        allUsers.push(absence.validator_user)
+    allUsers = arrayToolsAbsences.unique(allUsers)
+
+    loadSlackUsersInfo(allUsers, function () {
+        message.type = 'direct_message'
+        var absAttchmnt = getAbsenceAttachment(message, absence)
+        var absAttchmntEmail = getAbsenceAttachment(message, absence, { useFullName: true })
+        // Notify requester
+        if (absence.validator_user != null && absence.user !== message.user) {
+            var requesterText = '<@' + absence.validator_user + '> updated your absence request'
+            sendPrivateMessage(bot, absence.user, { text: requesterText, attachments: [absAttchmnt] })
+            var requesterTextEmail = getSlackUserFullName(absence.validator_user) + ' updated your absence request'
+            sendEmail({
+                to: [absence.user],
+                cc: [absence.validator_user],
+                subject: ABSENCE_EMAIL_SUBJECT_PREFIX + requesterTextEmail,
+                text: absAttchmntEmail.text
+            })
+        }
+        // Notify validator of an update
+        if (absence.validator_user != null && absence.validator_user !== message.user) {
+            var validatorText = '<@' + absence.user + '> updated his absence request'
+            sendPrivateMessage(bot, absence.validator_user, { text: validatorText, attachments: [absAttchmnt] })
+        }
+        // Notify all absence validators that there are new requests to validate
+        if (absence.validator_user == null) {
+            var validationRqstdText = 'There is a new absence request to validate for <@' + absence.user + '> '
+            var validationRqstdEmailTitle = 'There is a new absence request to validate for ' + getSlackUserFullName(absence.user)
+            validatorUsers[ABSENCES_TEAM_ID].forEach(validatorUser => {
+                sendPrivateMessage(bot, validatorUser, { text: validationRqstdText, attachments: [absAttchmnt] })
+                sendEmail({
+                    to: [validatorUser],
+                    subject: ABSENCE_EMAIL_SUBJECT_PREFIX + validationRqstdEmailTitle,
+                    text: absAttchmntEmail.text + '\n\nTo validate it, type "absences" in a private conversation with the slackbot '
+                }
+                )
+            })
+        }
+    })
 }
 
 // List absences
@@ -325,7 +380,7 @@ function listAbsences(bot, message, params, cb) {
             team.absences = {}
 
         // List absences to display
-        var isCurrentUserValidator = checkUserIsValidator(bot,message,message.user)
+        var isCurrentUserValidator = checkUserIsValidator(bot, message, message.user)
         var absencesToDisplay = []
         Object.keys(team.absences).forEach(absenceId => {
             var absence = team.absences[absenceId]
@@ -352,11 +407,11 @@ function listAbsences(bot, message, params, cb) {
 
             }
             // Filter Rejected and cancelled if not current user request, or if user is not validator 
-            if (toAdd === true && 
+            if (toAdd === true &&
                 isCurrentUserValidator === false &&
-                ['Cancelled','Rejected'].includes(absence.status) &&
-                absence.user !== message.user 
-              ) {
+                ['Cancelled', 'Rejected'].includes(absence.status) &&
+                absence.user !== message.user
+            ) {
                 toAdd = false
             }
             if (toAdd === true) {
@@ -407,7 +462,7 @@ function getAbsenceAttachment(message, absence, params = {}) {
     var momentEnd = momentAbsences(absence.end_date)
     var momentAbsDuration = momentAbsences.duration(momentStart.diff(momentEnd))
     // User
-    var text = '<@' + absence.user + '>'
+    var text = (params.useFullName === true) ? getSlackUserFullName(absence.user) : '<@' + absence.user + '>'
     // Time
     if (momentStart.isAfter(momentToday))
         text += ' will be'
@@ -421,8 +476,10 @@ function getAbsenceAttachment(message, absence, params = {}) {
     else
         text += ' in vacation'
     // Status
-    if (['Accepted', 'Rejected'].includes(absence.status))
-        text += ' (*' + absence.status + '* by <@' + absence.validator_user + '>)'
+    if (['Accepted', 'Rejected'].includes(absence.status)) {
+        var byName = (params.useFullName === true) ? getSlackUserFullName(absence.validator_user) : '<@' + absence.validator_user + '>'
+        text += ' (*' + absence.status + '* by ' + byName + ')'
+    }
     else
         text += ' (*' + absence.status + '*)'
 
@@ -526,9 +583,9 @@ function getAbsenceAttachment(message, absence, params = {}) {
 
 // Set / Remove absence validator
 function manageAbsenceValidators(bot, message, user, addOrRemove) {
-    checkUserIsAdmin(message.user, function (isAdmin){
+    checkUserIsAdmin(message.user, function (isAdmin) {
         if (isAdmin === false) {
-            bot.reply(message, {attachments: [{text:'<@'+message.user+'> , you must be team admin to do that :closed_lock_with_key:',color:'danger'}]});
+            bot.reply(message, { attachments: [{ text: '<@' + message.user + '> , you must be team admin to do that :closed_lock_with_key:', color: 'danger' }] });
             return
         }
         controller.storage.teams.get(ABSENCES_TEAM_ID, function (err, team) {
@@ -571,7 +628,7 @@ function listValidators(bot, message, params = {}) {
             if (validatorUsers == null)
                 validatorUsers = {}
             // Update memory variable
-            validatorUsers[ABSENCES_TEAM_ID] = team.validator_users
+            validatorUsers[ABSENCES_TEAM_ID] = arrayToolsAbsences.unique(team.validator_users)
             // Display message if necessary
             if (params.displayMessage === true) {
                 var frmtdValidatorUsers = []
@@ -624,6 +681,28 @@ function checkUpdateAbsenceAllowed(bot, message, user) {
     }
 }
 
+// Mail all absences of database
+function mailAllAbsences(bot, message) {
+    loadSlackUsersInfo([message.user], function () {
+        if (checkUserIsValidator(bot, message, message.user, { angry: true })) {
+            listAbsences(bot, message, { timeframes: ['past', 'current', 'future'], order: 'asc' }, function (absences, absencesMessage) {
+                absenceMailLines = []
+                absences.forEach(absence => {
+                    var absAttchmntEmail = getAbsenceAttachment(message, absence, { useFullName: true })
+                    absenceMailLines.push(absAttchmntEmail.text)
+                    absenceMailLines.push('\n')
+                })
+                sendEmail({
+                    to: [message.user],
+                    subject: ABSENCE_EMAIL_SUBJECT_PREFIX + 'All absences extract',
+                    text: absenceMailLines.join('\n')
+                })
+                bot.reply(message, { text: 'Email with absences sent !' });
+            })
+        }
+    })
+}
+
 // parseAbsDate
 function parseAbsDate(dateString) {
     var dateParts = dateString.split("/");
@@ -638,8 +717,80 @@ function sendPrivateMessage(bot, user, messageToSend) {
     }, (err, res) => {
         if (err) {
             bot.botkit.log('Failed to open IM with user', err)
+        } else {
+            messageToSend.channel = res.channel.id
+            bot.say(messageToSend);
         }
-        messageToSend.channel = res.channel.id
-        bot.say(messageToSend);
     })
 }
+
+// Load all users info then call callBack
+function loadSlackUsersInfo(users, cb) {
+    var promiseUserInfoAll = users.map(function (user) {
+        return new Promise(function (resolve, reject) {
+            if (user == null)
+                resolve()
+            else if (currentUserInfo[user] != null) {
+                resolve()
+            }
+            else {
+                bot.api.users.info({ user: user }, function (err, info) {
+                    if (err)
+                        console.log('Error while fetching user info: ' + err)
+                    currentUserInfo[user] = info.user
+                    resolve()
+                })
+            }
+        })
+    })
+    Promise.all(promiseUserInfoAll)
+        .then(function () {
+            cb()
+        })
+        .catch(console.error);
+}
+
+// Get slack user info ( return promise )
+function getSlackUserInfo(user) {
+    return currentUserInfo[user]
+}
+
+// Get user long name
+function getSlackUserFullName(user) {
+    return getSlackUserInfo(user).real_name
+}
+
+function getSlackUserEmail(user) {
+    return getSlackUserInfo(user).profile.email
+}
+
+// Send email
+function sendEmail(emailData) {
+    var toEmails = []
+    emailData.to.forEach(user => {
+        toEmails.push(getSlackUserEmail(user))
+    })
+    var mailOptions = {
+        from: ABSENCES_SENDER_EMAIL_ADDRESS,
+        to: toEmails.join(),
+        subject: emailData.subject,
+        text: emailData.text
+    };
+
+    if (emailData.cc != null) {
+        var ccEmails = []
+        emailData.cc.forEach(user => {
+            ccEmails.push(getSlackUserEmail(user))
+        })
+        mailOptions.cc = ccEmails.join()
+    }
+
+    transporterEmailAbsences.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log('ABSENCES: Email sent: ' + info.response);
+        }
+    });
+}
+
