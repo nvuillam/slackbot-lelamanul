@@ -5,6 +5,8 @@ if (process.env.ACTIVATE_QUIZZ === "TRUE") {
     eval(fs.readFileSync('./domains/misc/quizz.js') + '')
 }
 
+eval(fs.readFileSync('./domains/misc/scores.js') + '')
+
 // Base MISC commands
 controller.hears(['^hello', '^bonjour','^hi','^salut (.*)'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
     if (message.bot_id && message.bot_id != null)

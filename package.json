@@ -1,6 +1,6 @@
 {
   "name": "slackbot-lelamanul",
-  "version": "0.5.23",
+  "version": "0.6.0",
   "description": "Mouwouuuuuuu",
   "main": "index.js",
   "scripts": {
@@ -31,6 +31,7 @@
     "dateformat": "^3.0.3",
     "github-api": "^3.0.0",
     "html-entities": "^1.2.1",
+    "is-json": "^2.0.1",
     "jenkins-api": "^0.3.1",
     "jira-client": "^6.4.1",
     "moment": "^2.22.2",
