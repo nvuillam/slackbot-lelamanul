@@ -121,6 +121,12 @@ Feel free to contribute :)
 
   - Miscellaneous
     - **ACTIVATE_QUIZZ** : Activate quizz & trivia commands
+    
+  - Email notifications
+    - **ABSENCES_SENDER_EMAIL_SERVICE** : Email service for nodemailer package
+    - **ABSENCES_SENDER_EMAIL_ADDRESS** : Email address sending the mails
+    - **ABSENCES_SENDER_EMAIL_USERNAME** : Username for mailing service ( if not set, ABSENCES_SENDER_EMAIL_ADDRESS will be used )
+    - **ABSENCES_SENDER_EMAIL_PASSWORD** : Password token for E-mail service
 
 ### Add lelamanul to your slack workspace
 
