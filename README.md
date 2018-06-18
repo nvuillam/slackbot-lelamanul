@@ -77,19 +77,19 @@ Feel free to contribute :)
   - Interactive components: https://YOURAPPNAME.herokuapp.com/slack/receive (can be done after next step)
 
   - OAuth & Permissions
-  
-  		- Callback URL: https://YOURAPPNAME.herokuapp.com/oauth (can be done after next step) 
+
+  	- Callback URL: https://YOURAPPNAME.herokuapp.com/oauth (can be done after next step) 
       
-  		- Permission scopes:
+  	- Permission scopes:
       
-        - bot
-        - channels:write 
-        - chat:write:bot
-        - incoming-webhook 
-        - users:read
-        - users:read.email
-        - users.profile:read
- 
+      - bot
+      - channels:write 
+      - chat:write:bot
+      - incoming-webhook 
+      - users:read
+      - users:read.email
+      - users.profile:read
+
  - Activate bot user
 
 ### Deploy this repo on Heroku
