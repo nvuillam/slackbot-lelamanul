@@ -80,7 +80,15 @@ Feel free to contribute :)
   
   		- Callback URL: https://YOURAPPNAME.herokuapp.com/oauth (can be done after next step) 
       
-  		- Permission scopes: channels:write , incoming-webhook , bot
+  		- Permission scopes:
+      
+        - bot
+        - channels:write 
+        - chat:write:bot
+        - incoming-webhook 
+        - users:read
+        - users:read.email
+        - users.profile:read
  
  - Activate bot user
 
