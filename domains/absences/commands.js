@@ -6,7 +6,7 @@ const MY_ABSENCES_TRIGGER_WORDS = ['^my vacations', '^my absences', '^my out of 
 const MY_PAST_ABSENCES_TRIGGER_WORDS = ['^my past vacations', '^my past absences', '^my past out of office', '^mes vacances passées', '^mes congés passés'];
 const SET_ABSENCES_VALIDATOR_WORDS = ['^add vacations validator (.*)', '^set vacations validator (.*)', '^add absences validator (.*)', '^set absences validator (.*)']
 const REMOVE_ABSENCES_VALIDATOR_WORDS = ['^remove vacations validator (.*)', '^remove absences validator (.*)']
-const MAIL_ME_ALL_ABSENCES_WORDS = ['^mail me all absences', '^extract absences','^extract vacations', '^extract vacances','^extract congés']
+const MAIL_ME_ALL_ABSENCES_WORDS = ['^mail me all absences', '^extract absences', '^extract vacations', '^extract vacances', '^extract congés']
 
 const ABSENCE_REASONS = [
     { label: 'Vacation', value: 'Vacation' },
@@ -332,7 +332,7 @@ function manageAbsenceNotification(bot, message, absence) {
         allUsers.push(absence.validator_user)
     allUsers = arrayToolsAbsences.unique(allUsers)
 
-    loadSlackUsersInfo(bot,allUsers, function () {
+    loadSlackUsersInfo(bot, allUsers, function () {
         message.type = 'direct_message'
         var absAttchmnt = getAbsenceAttachment(message, absence)
         var absAttchmntEmail = getAbsenceAttachment(message, absence, { useFullName: true })
@@ -683,9 +683,16 @@ function checkUpdateAbsenceAllowed(bot, message, user) {
 
 // Mail all absences of database
 function mailAllAbsences(bot, message) {
-    loadSlackUsersInfo(bot,[message.user], function () {
-        if (checkUserIsValidator(bot, message, message.user, { angry: true })) {
-            listAbsences(bot, message, { timeframes: ['past', 'current', 'future'], order: 'asc' }, function (absences, absencesMessage) {
+    if (checkUserIsValidator(bot, message, message.user, { angry: true })) {
+        listAbsences(bot, message, { timeframes: ['past', 'current', 'future'], order: 'asc' }, function (absences, absencesMessage) {
+            var userList = []
+            absences.forEach(absence => {
+                userList.push(absence.user)
+                if (absence.validator_user != null)
+                    userList.push(absence.user)
+            })
+            userList = arrayToolsAbsences.unique(userList)
+            loadSlackUsersInfo(bot, userList, function () {
                 absenceMailLines = []
                 absences.forEach(absence => {
                     var absAttchmntEmail = getAbsenceAttachment(message, absence, { useFullName: true })
@@ -699,8 +706,8 @@ function mailAllAbsences(bot, message) {
                 })
                 bot.reply(message, { text: 'Email with absences sent !' });
             })
-        }
-    })
+        })
+    }
 }
 
 // parseAbsDate
@@ -725,7 +732,7 @@ function sendPrivateMessage(bot, user, messageToSend) {
 }
 
 // Load all users info then call callBack
-function loadSlackUsersInfo(bot,users, cb) {
+function loadSlackUsersInfo(bot, users, cb) {
     var promiseUserInfoAll = users.map(function (user) {
         return new Promise(function (resolve, reject) {
             if (user == null)
@@ -737,7 +744,7 @@ function loadSlackUsersInfo(bot,users, cb) {
                 bot.api.users.info({ user: user }, function (err, info) {
                     if (err)
                         bot.botkit.log('Error while fetching user info: ' + err)
-                    console.log('bot.api.user result: '+JSON.stringify(info))
+                    console.log('bot.api.user result: ' + JSON.stringify(info))
                     currentUserInfo[user] = info.user
                     resolve()
                 })
@@ -759,19 +766,19 @@ function getSlackUserInfo(user) {
 // Get user long name
 function getSlackUserFullName(user) {
     var userInfo = getSlackUserInfo(user)
-    if (userInfo!= null)
+    if (userInfo != null)
         return userInfo.real_name
     else {
-        bot.botkit.log('Error fetching user full name', userInfo)       
+        bot.botkit.log('Error fetching user full name', userInfo)
     }
 }
 
 function getSlackUserEmail(user) {
     var userInfo = getSlackUserInfo(user)
-    if (userInfo!= null && userInfo.profile != null && userInfo.profile.email != null)
+    if (userInfo != null && userInfo.profile != null && userInfo.profile.email != null)
         return userInfo.profile.email
     else {
-        bot.botkit.log('Error fetching user email', userInfo)       
+        bot.botkit.log('Error fetching user email', userInfo)
     }
 }
 
