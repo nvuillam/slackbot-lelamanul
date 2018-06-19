@@ -1,11 +1,18 @@
 // Load MISC commands
 
-// QUIZZ if ACTIVATE_QUIZZ = TRUE
-if (process.env.ACTIVATE_QUIZZ === "TRUE") {
+// QUIZZ if ACTIVATE_QUIZZ !== TRUE
+if (process.env.ACTIVATE_QUIZZ !== "FALSE") {
     eval(fs.readFileSync('./domains/misc/quizz.js') + '')
 }
+if (process.env.ACTIVATE_SCORES !== "FALSE") {
+    eval(fs.readFileSync('./domains/misc/scores.js') + '')
+}
 
-eval(fs.readFileSync('./domains/misc/scores.js') + '')
+// Constants
+TELL_COMPARE_STRING_SIMILARITY_VALIDITY  = 0.5
+
+// Libs
+var stringSimilarityMisc = require('string-similarity');
 
 // Base MISC commands
 controller.hears(['^hello', '^bonjour','^hi','^salut (.*)'], 'ambient,direct_message,direct_mention,mention', function (bot, message) {
@@ -127,8 +134,28 @@ controller.hears(['^tell me (.*)', '^tell (.*)', '^dis moi (.*)'], 'ambient,dire
             bot.reply(message, 'Here\'s what i know: ' + Object.keys(team.tell_me_list).sort());
         }
         else {
-            bot.reply(message, 'Sorry, I don\'t know ' + key + '\nTeach me by saying _learn ' + key + '=SOME_VALUE_');
+            // Check word similarity
+            var similarList = []
+            Object.keys(team.tell_me_list).forEach( tellKey => {
+                var similarityScore = stringSimilarityMisc.compareTwoStrings(tellKey, key); 
+                if (similarityScore >= TELL_COMPARE_STRING_SIMILARITY_VALIDITY) {
+                    similarList.push([similarityScore,tellKey])
+                }
+            })
+            // Sort matching results by score
+            similarList.sort(function(a, b) { 
+                return a[0] > b[0] ? 1 : -1;
+            });
+            console.log('Similar matching words found:'+JSON.stringify(similarList))
+
+            if (similarList.length > 0) {
+                bot.reply(message, team.tell_me_list[similarList[0][1]]+'\n_Found via word similarity matching_');
+            }
+            else {
+                bot.reply(message, 'Sorry, I don\'t know ' + key + '\nTeach me by saying _learn ' + key + '=SOME_VALUE_');
+            }
         }
+
 
     });
 });
