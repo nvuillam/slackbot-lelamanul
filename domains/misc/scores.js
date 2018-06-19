@@ -42,9 +42,11 @@ controller.hears(SCORES_STOP_TRIGGER_WORDS, 'ambient,direct_message,direct_menti
 function startTracking(bot) {
     console.log('SCORES: Start tracking')
     refreshLiveScores(bot, { checkInactive: true })
-    passiveIntervalId = setInterval(function () {
-        refreshLiveScores(bot, { checkInactive: true })
-    }, SCORES_PASSIVE_TRACKING_INTERVAL)
+    if (passiveIntervalId == null) {
+        passiveIntervalId = setInterval(function () {
+            refreshLiveScores(bot, { checkInactive: true })
+        }, SCORES_PASSIVE_TRACKING_INTERVAL)
+    }
 }
 
 // Stop tracking
@@ -106,15 +108,16 @@ function unsusbscribeChannel(bot, message, channel) {
 
 // Set tracking active ( refresh frequently )
 function setTrackingActive() {
-    if (activeIntervalId === null)
+    if (activeIntervalId === null) {
         console.log('SCORES: Tracking set to active')
-    activeIntervalId = setInterval(function () {
-        refreshLiveScores(bot)
-    }, SCORES_ACTIVE_TRACKING_INTERVAL)
+        activeIntervalId = setInterval(function () {
+            refreshLiveScores(bot)
+        }, SCORES_ACTIVE_TRACKING_INTERVAL)
+    }
 }
 
 // Refresh & send notifs if requested
-function refreshLiveScores(bot, params={}) {
+function refreshLiveScores(bot, params = {}) {
     // Make promises for all competitions
     var promiseJobAll = currentTrackedCompetitionsIds.map(function (competitionId) {
         return new Promise(function (resolve, reject) {
@@ -159,9 +162,9 @@ function requestApiScores(competitionId, cb) {
     var getRequest = {
         url: gamesUri,
         headers: {
-          'X-Auth-Token': API_FOOTBALL_DATA_TOKEN
+            'X-Auth-Token': API_FOOTBALL_DATA_TOKEN
         },
-      };
+    };
 
     requestScores.get(getRequest, function (error, response, body) {
         if (error) {
@@ -173,7 +176,7 @@ function requestApiScores(competitionId, cb) {
             if (body != null && isJsonScores(body))
                 body = JSON.parse(body)
             else {
-                console.error('SCORES ERROR BODY: '+body)
+                console.error('SCORES ERROR BODY: ' + body)
                 body = {}
             }
         }
@@ -184,7 +187,7 @@ function requestApiScores(competitionId, cb) {
 // Check if there is an active game in the followed competition
 // If yes, set tracking mode to active ( refresh every minute )
 function storeAndDetectEvents(bot, competitionId) {
-    console.log('SCORES: storeAndDetectEvents for '+competitionId)
+    console.log('SCORES: storeAndDetectEvents for ' + competitionId)
     currentTrackedCompetitions[competitionId].all_games.forEach(game => {
         if (game.status === 'IN_PLAY') {
             // Set tracking mode active while there is at least one active game
