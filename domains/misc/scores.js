@@ -166,7 +166,8 @@ function requestApiScores(competitionId, cb) {
     requestScores.get(getRequest, function (error, response, body) {
         if (error) {
             console.error(error)
-
+            if (body == null)
+                body = {}
         }
         else {
             if (body != null && isJsonScores(body))
