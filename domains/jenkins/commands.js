@@ -89,6 +89,11 @@ controller.hears('^jobs', 'ambient,direct_message,mention,direct_mention', funct
         });
         Promise.all(promiseJobAll)
             .then(function () {
+                // Sort by title
+                attachments.sort(function (a, b) {
+                    return a.title > b.title ? 1 : -1;
+                });
+                // Reply job list
                 bot.reply(message, { attachments: attachments });
             })
             .catch(console.error);
