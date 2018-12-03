@@ -2,6 +2,15 @@
 
 var jenkinsapi = require('jenkins-api');
 
+// CONSTANTS
+const DIALOG_DEF_BOOL_SELECT = [
+    { label: 'Yes', value: "true" },
+    { label: 'No', value: "false" }
+];
+
+// VARIABLES
+var currentlyManagedJobs = {}
+
 // Get jenkins client
 function getJenkinsClient() {
     console.log("http://" + process.env.JENKINS_USERNAME + ":" + process.env.JENKINS_PASSWORD + "@" + process.env.JENKINS_HOST)
@@ -62,23 +71,31 @@ controller.hears('^jobs', 'ambient,direct_message,mention,direct_mention', funct
                             color = 'danger'
                         }
                     }
+
+                    var actionBuild = {
+                        "text": "Build",
+                        "name": "launch_build",
+                        "value": JSON.stringify({jobName: item.name}),
+                        "type": "button",
+                        "confirm": {
+                            "text": `Are you sure you want to build job ${item.name} ?`,
+                            "ok_text": "Yes",
+                            "dismiss_text": "No"
+                        }
+                    };
+
+                    // Remove confirmation popup if there will be parameters to input
+                    let jobParameters = getJenkinsJobProperty(jobInfo,'hudson.model.ParametersDefinitionProperty');
+                    if (jobParameters != null && jobParameters.parameterDefinitions != null &&  jobParameters.parameterDefinitions.length > 0)
+                        delete actionBuild["confirm"];
+
                     var attachment = {
                         title: item.name,
                         title_link: item.url,
                         fields: fields,
                         callback_id: 'jenkins:job_list',
                         actions: [
-                            {
-                                "text": "Build",
-                                "name": "launch_build",
-                                "value": JSON.stringify({jobName: item.name}),
-                                "type": "button",
-                                "confirm": {
-                                    "text": `Are you sure you want to build job ${item.name} ?`,
-                                    "ok_text": "Yes",
-                                    "dismiss_text": "No"
-                                }
-                            }
+                            actionBuild
                         ] ,   
                         color: color
                     };
@@ -177,24 +194,75 @@ global.interactive_jenkins_job_list = function interactive_jenkins_job_list(bot,
     }
 }
 
+// Handle parameters input for job build
+global.dialog_jenkins_build_job_with_params = function dialog_jenkins_build_job_with_params(bot, message) {
+    console.log('Receiving parameters input dialog response ' + JSON.stringify(message.submission))
+    jobBuild(bot,message,{jobName: currentlyManagedJobs[message.user]})
+    bot.dialogOk()
+    delete currentlyManagedJobs[message.user]
+}
+
+
 /////////////////// Common functions ////////////////////////
 
 // New build
 function jobBuild(bot,message,actionValue) {
     var jenkins = getJenkinsClient();
-    jenkins.build(actionValue.jobName, function (err, data) {
-        if (err) { return console.log(err); }
-        console.log(data)
-        var launchedBuildMsg
-        var color = 'danger'
-        if (data.statusCode === 201) {
-            launchedBuildMsg = 'I launched a build for ' + actionValue.jobName;
-            color = 'good'
+
+    // Get job info to check if there are parameters
+    jenkins.job_info(actionValue.jobName, function (err2, jobInfo) {
+
+        let jobParameters = getJenkinsJobProperty(jobInfo,'hudson.model.ParametersDefinitionProperty');
+
+        if (jobParameters != null && jobParameters.parameterDefinitions != null && jobParameters.parameterDefinitions.length > 0 &&
+            (message.submission == null || Object.keys(message.submission).length === 0 )) {
+            // Job has parameters : request them
+            var dialog = bot.createDialog(
+                'Parameters',
+                'jenkins:build_job_with_params',
+                'Build'
+            ) ;
+            jobParameters.parameterDefinitions.forEach(paramDef => {
+                if (paramDef._class === 'hudson.model.StringParameterDefinition') {
+                    dialog.addText(paramDef.name,paramDef.name,paramDef.defaultParameterValue.value,{ placeholder: paramDef.description });
+                }
+                else if (paramDef._class === 'hudson.model.BooleanParameterDefinition') {
+                    let defBool = null ;
+                    if (paramDef.defaultParameterValue.value === true)
+                        defBool = 'true'
+                    else if (paramDef.defaultParameterValue.value === false)
+                        defBool = 'false'                        
+                    dialog.addSelect(paramDef.name,paramDef.name,defBool,DIALOG_DEF_BOOL_SELECT,{ placeholder: paramDef.description });
+                }
+            });
+            currentlyManagedJobs[message.user] = actionValue.jobName
+            bot.replyWithDialog(message, dialog.asObject());
+
         }
         else {
-            launchedBuildMsg = 'Error while launching build for' + actionValue.jobName
+            // Build job 
+            if (message.submission != null && Object.keys(message.submission).length > 0) {
+                const jobInputparameters = message.submission
+                jenkins.build_with_params(actionValue.jobName,jobInputparameters,callBackBuild);
+            }
+            else 
+                jenkins.build(actionValue.jobName,callBackBuild);
+
+            function callBackBuild(err,data) {
+                if (err) { return console.log(err); }
+                console.log(data)
+                var launchedBuildMsg
+                var color = 'danger'
+                if (data.statusCode === 201) {
+                    launchedBuildMsg = 'I launched a build for ' + actionValue.jobName;
+                    color = 'good'
+                }
+                else {
+                    launchedBuildMsg = 'Error while launching build for' + actionValue.jobName
+                }
+                bot.reply(message, { attachments: [{ text: launchedBuildMsg, color: color }] });
+            }
         }
-        bot.reply(message, { attachments: [{ text: launchedBuildMsg, color: color }] });
     });
 }
 
@@ -216,4 +284,16 @@ function stopBuild(bot,message,actionValue) {
         }
         bot.reply(message, { attachments: [{ text: stoppedBuildMsg, color: color }] });
     });
+}
+
+// Get parameters definition from a job info item
+function getJenkinsJobProperty(jobInfo,propName) {
+    if (!jobInfo.property)
+        return null ;
+    let jobProp = null ;
+    jobInfo.property.forEach(prop => {
+        if (prop._class === propName)
+            jobProp = prop
+    })
+    return jobProp ;
 }
