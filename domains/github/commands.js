@@ -69,41 +69,83 @@ controller.hears(['^search doc (.*)', '^search wiki (.*)'], 'ambient,direct_mess
 controller.hears('^pull requests', 'ambient,direct_message,mention,direct_mention', function (bot, message) {
     bot.startTyping(message, function () { });
     var client = getGithubClient();
-    client.get('/repos/' + process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO + '/pulls', { per_page: 100 }, function (err, status, pullRequests, headers) {
+    client.get('/repos/' + process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO + '/pulls', { per_page: 100 },
+     function (err, statusPulls, pullRequests, headers) {
         console.log(headers);
         console.log(pullRequests); //json object
         var text = 'Repo *' + process.env.GIT_MAIN_REPO + '* contains *' + pullRequests.length + '* pull requests\n';
         var attachments = [];
-        pullRequests.forEach(pullRequest => {
-            var attachment = {
-                title: pullRequest.title,
-                title_link: pullRequest.html_url,
-                fields: [
-                    {
-                        title: "User",
-                        value: pullRequest.user.login,
-                        short: true
-                    },
-                    {
-                        title: "Status",
-                        value: pullRequest.state,
-                        short: true
-                    },
-                    {
-                        title: "Created date",
-                        value: dateFormatBot(pullRequest.created_at),
-                        short: true
-                    },
-                    {
-                        title: "Last update date",
-                        value: dateFormatBot(pullRequest.updated_at),
-                        short: true
-                    }
-                ]
-            };
-            attachments.push(attachment);
+
+
+        var promisePRAll = pullRequests.map(function (pullRequest) {
+            return new Promise(function (resolve, reject) {
+
+                // List checks of PR
+                client.get(pullRequest._links.commits.href, function(err3,status3,prCommits,headers3) {
+                    console.log("COMMITS of "+pullRequest.title);
+                    console.log(prCommits);
+                    const commitsPos = prCommits.length -1
+                    const lastCommit = prCommits[commitsPos];
+
+                    client.requestDefaults['headers'] = {'Accept':'application/vnd.github.antiope-preview+json'}
+                    client.get('/repos/' + process.env.GIT_ORG + '/' + process.env.GIT_MAIN_REPO + '/commits/' + lastCommit.sha + '/status',
+                        function (err2, statusStatus, status, headers2) {
+                            console.log('STATUS for '+lastCommit.commit.message+' ('+lastCommit.sha+')'); 
+                            console.log(status); //json object
+                            let prColor = '';
+                            if ( status.state === 'success')
+                                prColor  ='good';
+                            else if( status.state === 'failure')
+                                prColor  ='danger';
+                            else if ( status.state === 'pending')
+                                prColor  ='warning';
+                            var attachment = {
+                                color: prColor,
+                                title: pullRequest.title,
+                                title_link: pullRequest.html_url,
+                                fields: [
+                                    {
+                                        title: "User",
+                                        value: pullRequest.user.login,
+                                        short: true
+                                    },
+                                    {
+                                        title: "Status",
+                                        value: pullRequest.state,
+                                        short: true
+                                    },
+                                    {
+                                        title: "Created date",
+                                        value: dateFormatBot(pullRequest.created_at),
+                                        short: true
+                                    },
+                                    {
+                                        title: "Last update date",
+                                        value: dateFormatBot(pullRequest.updated_at),
+                                        short: true
+                                    }
+                                ]
+                            };
+                            attachments.push(attachment);
+                            resolve()
+                        })
+    
+
+                })
+
+
+
+            })
+
         });
-        bot.reply(message, { text: text, attachments: attachments });
+
+        Promise.all(promisePRAll)
+        .then(function () {
+            // Reply PR list
+            bot.reply(message, { text: text, attachments: attachments });
+        })
+        .catch(console.error);
+
     });
 
 });
