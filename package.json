@@ -1,7 +1,7 @@
 {
   "name": "slackbot-lelamanul",
   "version": "0.6.3",
-  "description": "Mouwouuuuuuu",
+  "description": "Mouwouuuuuuuu",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
